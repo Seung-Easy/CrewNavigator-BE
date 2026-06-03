@@ -1,0 +1,103 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'Seung-Easy'
+version = '0.0.1-SNAPSHOT'
+description = 'CrewNavigator'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    // ---------------------------------------------
+    // 웹 & API 개발
+    // ---------------------------------------------
+    // Spring Web MVC - 일반적인 RESTful API나 웹 어플리케이션 생성 (Tomcat 내장)
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    // Spring WebFlux - 비동기 논블로킹 방식의 애플리케이션 생성 (고성능)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // WebSocket - 서버와 클라이언트 간의 양방향 실시간 통신 기능 제공
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // Validation - 사용자 입력 데이터(DTO 등)의 유효성 검증 제공
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // SpringDoc OpenAPI (Swagger) - API 명세서를 자동으로 생성하고 UI로 제공
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
+
+    // ---------------------------------------------
+    // 데이터베이스 & 영속성
+    // ---------------------------------------------
+    // Spring Data JPA - 자바 객체와 DB를 매핑해주는 ORM. SQL 작성 최소화
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // MyBatis - SQL을 직접 작성하여 세밀한 쿼리 제어가 필요한 경우 사용 (매퍼 프레임워크)
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1'
+    // MariaDB Driver - MariaDB 데이터베이스 서버와 연결하기 위한 드라이버
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+    // Redis (Access + Driver) - Redis를 DB(캐시, 키-값 저장소)로 사용하기 위한 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // Spring Session for Redis - 다중 서버 환경에서 세션을 Redis에 저장하고 공유하기 위함
+    implementation 'org.springframework.boot:spring-boot-starter-session-data-redis'
+
+    // ---------------------------------------------
+    // 보안 (Security)
+    // ---------------------------------------------
+    // Spring Security - 애플리케이션 인증 (로그인) 및 기타 인가(권한) 처리 기능
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Thymeleaf Security Extras - 화면 템플릿(Thymeleaf)에서 시큐리티 태그 사용 가능하게 함
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    // JJWT API - JWT 토큰 생성 및 검증에 필요한 핵심 인터페이스와 메서드 정의 명세서
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    // JJWT Impl - 런타임 시점에 실제 JWT 토큰의 발행 및 파싱 로직을 수행하는 구현체
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    // JJWT Jackson - JWT 토큰 내부 데이터(Payload)의 JSON 직렬화 및 역직렬화를 지원
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+    // Spring Boot OAuth2 Client - 구글, 카카오 등 외부 소셜 로그인 및 사용자 정보 연동 기능 제공
+    implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
+
+    // ---------------------------------------------
+    // 뷰(View) 템플릿
+    // ---------------------------------------------
+    // Thymeleaf - 서버 사이드에서 HTML 화면을 동적으로 렌더링할 때 사용하는 템플릿 엔진
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+    // ---------------------------------------------
+    // 기타 부가 기능
+    // ---------------------------------------------
+    // Java Mail Sender - 애플리케이션 내부에서 이메일 전송 기능 제공
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // ---------------------------------------------
+    // 개발 편의성 (Development Tools
+    // ---------------------------------------------
+    // Lombok - Getter, Setter, 생성자 등 반복되는 코드를 어노테이션으로 자동 생성
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // Spring Boot DevTools - 코드 수정 시 서버 자동 재시작(Hot Reload) 지원 등 개발 편의 기능
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // ---------------------------------------------
+    // 테스트
+    // ---------------------------------------------
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.1'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
