@@ -24,7 +24,7 @@ dependencies {
     // 웹 & API 개발
     // ---------------------------------------------
     // Spring Web MVC - 일반적인 RESTful API나 웹 어플리케이션 생성 (Tomcat 내장)
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     // Spring WebFlux - 비동기 논블로킹 방식의 애플리케이션 생성 (고성능)
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     // WebSocket - 서버와 클라이언트 간의 양방향 실시간 통신 기능 제공

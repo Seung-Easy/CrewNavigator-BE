@@ -68,7 +68,22 @@ public enum ResponseCode {
 
     // 공통 에러
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "EC001", "잘못된 입력값입니다."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "EC002", "서버 내부 오류가 발생했습니다.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "EC002", "서버 내부 오류가 발생했습니다."),
+
+    // 계정/인증 에러
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "A001", "사용자를 찾을 수 없습니다."),
+    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "A002", "비밀번호가 일치하지 않습니다."),
+    DUPLICATE_USER_ID(HttpStatus.CONFLICT, "A003", "이미 사용 중인 아이디입니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "A004", "이미 사용 중인 이메일입니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "A005", "유효하지 않은 토큰입니다."),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "A006", "만료된 토큰입니다."),
+    TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED, "A007", "로그아웃 또는 강제 로그아웃된 토큰입니다."),
+    REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A008", "리프레시 토큰을 찾을 수 없습니다."),
+    ACCOUNT_LOCKED(HttpStatus.FORBIDDEN, "A009", "계정이 잠겼습니다."),
+    ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "A010", "비활성화된 계정입니다."),
+    ACCOUNT_LEAVE(HttpStatus.GONE, "A011", "탈퇴한 계정입니다."),
+    UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "A012", "인증되지 않은 접근입니다."),
+    FORCE_LOGOUT(HttpStatus.UNAUTHORIZED, "A013", "관리자에 의해 강제 로그아웃되었습니다.");
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드
