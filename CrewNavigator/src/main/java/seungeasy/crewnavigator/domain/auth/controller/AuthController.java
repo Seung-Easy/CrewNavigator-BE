@@ -4,7 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +19,26 @@ import seungeasy.crewnavigator.domain.auth.security.CustomUserDetails;
 import seungeasy.crewnavigator.domain.auth.service.AuthCommandService;
 import seungeasy.crewnavigator.domain.auth.service.AuthQueryService;
 
+import java.time.Duration;
 import java.util.List;
 
+/**
+ * <pre>
+ *  Class Name: AuthController
+ *  Description: 인증/인가 관련 REST API 요청을 처리하는 컨트롤러.
+ *
+ *  [제공 API]
+ *  - 회원가입, 로그인, 토큰 갱신, 로그아웃
+ *  - 비밀번호 변경/재설정, 회원 탈퇴
+ *  - 강제 로그아웃, 아이디 찾기, 내 정보 조회
+ *
+ * History
+ * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * </pre>
+ *
+ * @author Seung-Geon
+ * @version 1.0
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -42,13 +62,25 @@ public class AuthController {
                 .body(CustomResponse.success(ResponseCode.CREATED));
     }
 
-    @Operation(summary = "토큰 갱신", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.")
+    @Operation(summary = "토큰 갱신", description = "HttpOnly 쿠키의 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.")
     @PostMapping("/refresh")
     public ResponseEntity<CustomResponse<TokenResponse>> refreshToken(
-            @RequestHeader("Authorization") String bearerToken) {
-        String refreshToken = bearerToken.substring(7);
-        TokenResponse response = authCommandService.refreshToken(refreshToken);
-        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, response));
+            @CookieValue("refreshToken") String refreshToken) {
+        TokenResponse tokenResponse = authCommandService.refreshToken(refreshToken);
+
+        // 새 Refresh Token을 HttpOnly Cookie로 갱신
+        ResponseCookie newRefreshCookie = ResponseCookie.from("refreshToken", tokenResponse.refreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/auth/refresh")
+                .maxAge(Duration.ofDays(7))
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, newRefreshCookie.toString())
+                .body(CustomResponse.success(ResponseCode.OK,
+                        TokenResponse.of(tokenResponse.accessToken(), null, tokenResponse.expiresIn())));
     }
 
     @Operation(summary = "로그아웃", description = "현재 로그인된 계정을 로그아웃 처리합니다.")
@@ -58,7 +90,19 @@ public class AuthController {
             @RequestHeader("Authorization") String bearerToken) {
         String accessToken = bearerToken.substring(7);
         authCommandService.logout(accessToken, userDetails.getUsername());
-        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+
+        // Refresh Token 쿠키 삭제
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .body(CustomResponse.success(ResponseCode.OK));
     }
 
     @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인하고 새 비밀번호로 변경합니다.")

@@ -18,6 +18,22 @@ import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * <pre>
+ *  Class Name: AuthCommandServiceImpl
+ *  Description: 인증/계정 관련 쓰기(Command) 작업을 처리하는 서비스 구현체.
+ *
+ *  [주요 기능]
+ *  - 회원가입, 토큰 갱신, 로그아웃
+ *  - 비밀번호 변경/재설정, 회원 탈퇴, 강제 로그아웃
+ *
+ * History
+ * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * </pre>
+ *
+ * @author Seung-Geon
+ * @version 1.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,6 +46,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final JwtProvider jwtProvider;
     private final RedisService redisService;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void signup(SignupRequest request) {
@@ -54,6 +73,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         log.info("User signed up: {}", request.userId());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public TokenResponse refreshToken(String refreshToken) {
@@ -84,6 +106,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         return TokenResponse.of(newAccessToken, newRefreshToken, jwtProvider.getAccessTokenExpiration() / 1000);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void logout(String accessToken, String userId) {
@@ -98,6 +123,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         log.info("User logged out: {}", userId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void changePassword(String userId, PasswordChangeRequest request) {
@@ -123,6 +151,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         log.info("Password changed for user: {}", userId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void resetPassword(PasswordResetRequest request) {
@@ -136,6 +167,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         log.info("Password reset for user: {}", request.userId());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void deleteAccount(String userId) {
@@ -153,6 +187,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         log.info("User deleted: {}", userId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void forceLogout(String userId, String adminId) {

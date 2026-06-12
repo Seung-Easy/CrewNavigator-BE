@@ -14,6 +14,22 @@ import seungeasy.crewnavigator.domain.auth.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * <pre>
+ *  Class Name: AuthQueryServiceImpl
+ *  Description: 인증/계정 관련 읽기(Query) 작업을 처리하는 서비스 구현체.
+ *
+ *  [주요 기능]
+ *  - 아이디 찾기
+ *  - 내 정보 조회
+ *
+ * History
+ * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * </pre>
+ *
+ * @author Seung-Geon
+ * @version 1.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -21,6 +37,9 @@ public class AuthQueryServiceImpl implements AuthQueryService {
 
     private final UserRepository userRepository;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public List<String> findUserId(FindIdRequest request) {
@@ -33,6 +52,9 @@ public class AuthQueryServiceImpl implements AuthQueryService {
         return List.of(user.get().getUserId());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public UserInfoResponse getUserInfo(String userId) {

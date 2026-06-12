@@ -4,6 +4,22 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
+/**
+ * <pre>
+ *  Class Name: PasswordResetRequest
+ *  Description: 비밀번호 재설정 요청 DTO. 사용자 인증 후 새 비밀번호를 설정합니다.
+ *
+ *  @param userId     사용자 ID (필수)
+ *  @param email      이메일 주소 (필수)
+ *  @param newPassword 새 비밀번호 (필수, 영문+숫자+특수문자 포함 8~20자)
+ *
+ * History
+ * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * </pre>
+ *
+ * @author Seung-Geon
+ * @version 1.0
+ */
 public record PasswordResetRequest(
         @NotBlank(message = "아이디는 필수 입력값입니다.")
         String userId,
