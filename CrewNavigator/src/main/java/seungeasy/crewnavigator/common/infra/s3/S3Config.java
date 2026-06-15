@@ -1,4 +1,4 @@
-package seungeasy.crewnavigator.common.s3;
+package seungeasy.crewnavigator.common.infra.s3;
 
 import org.springframework.context.annotation.Configuration;
 

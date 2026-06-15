@@ -1,4 +1,4 @@
-package seungeasy.crewnavigator.common.reids;
+package seungeasy.crewnavigator.common.infra.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @RequiredArgsConstructor
-public class  RedisService {
+public class RedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 

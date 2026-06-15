@@ -19,7 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import seungeasy.crewnavigator.common.reids.RedisService;
+import seungeasy.crewnavigator.common.infra.redis.RedisService;
 import seungeasy.crewnavigator.common.response.CustomResponse;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.dto.request.LoginRequest;

@@ -14,7 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import seungeasy.crewnavigator.common.reids.RedisService;
+import seungeasy.crewnavigator.common.infra.redis.RedisService;
 import seungeasy.crewnavigator.common.response.CustomResponse;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.security.AuthenticationFilter;
@@ -31,7 +31,7 @@ import seungeasy.crewnavigator.domain.auth.repository.UserRepository;
  *  [주요 설정 내용]
  *  - CSRF 보호 비활성화 (REST API)
  *  - 세션 관리 상태를 Stateless로 설정 (JWT 사용)
- *  - URL별 접근 권한 제어 (Swagger, Auth 관련 API 등은 허용)
+ *  - URL별 접근 권한 제어 (Swagger, Auth 관련 API 등은 허용, Admin API 인증 필요)
  *  - JWT 검증 및 커스텀 로그인 필터 적용
  *  - 비밀번호 암호화 (BCryptPasswordEncoder)
  *
@@ -40,6 +40,7 @@ import seungeasy.crewnavigator.domain.auth.repository.UserRepository;
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
  * 2026.06.11: Seung-Geon: AI를 통해 생성한 내용 검증 진행
  * 2026.06.12: Seung-Geon: AuthenticationEntryPoint fallback 추가, UserRepository 주입
+ * 2026.06.15: Seung-Geon: /admin/auth/** admin 전용 API 경로 추가
  * </pre>
  *
  * @author Seung-Geon
@@ -111,11 +112,15 @@ public class SecurityConfig {
 
                         // 인증 인가 파트
                         .requestMatchers("/auth/signup",
+                                "/auth/email/**",
                                 "/auth/refresh",
                                 "/auth/find-id",
                                 "/auth/password/reset",
                                 "/auth/health").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+
+                        // 관리자 API (TODO: ADMIN 역할 시스템 도입 시 .hasRole("ADMIN")로 변경)
+                        .requestMatchers("/admin/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
