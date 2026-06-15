@@ -6,11 +6,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import seungeasy.crewnavigator.common.exception.BusinessException;
-import seungeasy.crewnavigator.common.reids.RedisService;
+import seungeasy.crewnavigator.common.infra.redis.RedisService;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.dto.request.*;
 import seungeasy.crewnavigator.domain.auth.dto.response.TokenResponse;
 import seungeasy.crewnavigator.domain.auth.entity.*;
+import seungeasy.crewnavigator.domain.auth.infra.EmailService;
 import seungeasy.crewnavigator.domain.auth.repository.*;
 import seungeasy.crewnavigator.domain.auth.security.JwtProvider;
 import seungeasy.crewnavigator.domain.auth.type.UserStatus;
@@ -29,6 +30,8 @@ import java.util.concurrent.TimeUnit;
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * 2026.06.15: Seung-Geon: sendVerificationCode, verifyEmailCode 구현, signup 이메일 인증 확인 로직 추가, resetPassword 코드 검증 + 계정 잠금 해제 로직 추가
+ * 2026.06.15: Seung-Geon: resetPassword email:verified 키 검증 방식으로 변경 (code 직접 입력 → verify-code 선행)
  * </pre>
  *
  * @author Seung-Geon
@@ -45,6 +48,35 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RedisService redisService;
+    private final EmailService emailService;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void sendVerificationCode(SendVerificationCodeRequest request) {
+        emailService.sendVerificationCode(request.email());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void verifyEmailCode(VerifyCodeRequest request) {
+        String redisKey = "email:code:" + request.email();
+        Object storedCode = redisService.get(redisKey);
+        
+        if (storedCode == null) {
+            throw new BusinessException(ResponseCode.EXPIRED_VERIFICATION_CODE);
+        }
+        if (!storedCode.toString().equals(request.code())) {
+            throw new BusinessException(ResponseCode.INVALID_VERIFICATION_CODE);
+        }
+        
+        redisService.delete(redisKey);
+        // Mark email as verified for 30 minutes (enough time to complete signup)
+        redisService.save("email:verified:" + request.email(), true, 30, TimeUnit.MINUTES);
+    }
 
     /**
      * {@inheritDoc}
@@ -52,6 +84,13 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     @Override
     @Transactional
     public void signup(SignupRequest request) {
+        // 이메일 인증 확인
+        String verifiedKey = "email:verified:" + request.email();
+        if (!redisService.hasKey(verifiedKey)) {
+            throw new BusinessException(ResponseCode.EMAIL_VERIFICATION_REQUIRED);
+        }
+        redisService.delete(verifiedKey);
+
         // 중복 확인
         if (userRepository.existsByUserId(request.userId())) {
             throw new BusinessException(ResponseCode.DUPLICATE_USER_ID);
@@ -157,14 +196,29 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     @Override
     @Transactional
     public void resetPassword(PasswordResetRequest request) {
+        // 이메일 인증 확인 (verify-code 선행 필수)
+        String verifiedKey = "email:verified:" + request.email();
+        if (!redisService.hasKey(verifiedKey)) {
+            throw new BusinessException(ResponseCode.EMAIL_VERIFICATION_REQUIRED);
+        }
+        redisService.delete(verifiedKey);
+        
+        // 사용자 찾기
         User user = userRepository.findByEmail(request.email())
                 .filter(u -> u.getUserId().equals(request.userId()))
                 .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
-
+        
+        // 비밀번호 변경
         user.setPassword(passwordEncoder.encode(request.newPassword()));
+        
+        // 계정이 잠겨있으면 해제
+        if ("Y".equals(user.getIsLocked())) {
+            user.setIsLocked("N");
+            user.setLoginFailCount(0);
+        }
+        
         userRepository.save(user);
-
-        log.info("Password reset for user: {}", request.userId());
+        log.info("Password reset for user: {}. Account locked: {}", request.userId(), "Y".equals(user.getIsLocked()) ? "해제됨" : "해당없음");
     }
 
     /**

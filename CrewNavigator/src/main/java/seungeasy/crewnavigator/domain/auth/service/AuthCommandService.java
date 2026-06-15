@@ -14,12 +14,27 @@ import seungeasy.crewnavigator.domain.auth.dto.response.TokenResponse;
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 인터페이스 생성
+ * 2026.06.15: Seung-Geon: sendVerificationCode, verifyEmailCode 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
  * @version 1.0
  */
 public interface AuthCommandService {
+
+    /**
+     * 이메일 인증 코드를 발송합니다.
+     *
+     * @param request 인증 코드를 받을 이메일 정보
+     */
+    void sendVerificationCode(SendVerificationCodeRequest request);
+
+    /**
+     * 이메일 인증 코드를 검증합니다.
+     *
+     * @param request 이메일과 인증 코드 정보
+     */
+    void verifyEmailCode(VerifyCodeRequest request);
 
     /**
      * 신규 사용자를 등록합니다.

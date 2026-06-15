@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
  * History
  * 2024/06/04  Seung-Geon: Class 생성 및 Javadoc 추가
  * 2024/06/12  Seung-Geon: 코드 체계 변경 (S001 중복 제거, 에러 코드 E prefix 도입)
+ * 2026.06.15: Seung-Geon: EA017~EA020 이메일 인증 관련 에러 코드 추가
  * </pre>
  *
  * @author Seung-Geon
@@ -216,7 +217,39 @@ public enum ResponseCode {
      * 상황: 비밀번호 변경 주기가 지나 새 비밀번호로 변경이 필요한 경우
      * HTTP 상태: 401 Unauthorized
      */
-    PASSWORD_EXPIRED(HttpStatus.UNAUTHORIZED, "EA016", "비밀번호가 만료되었습니다.");
+    PASSWORD_EXPIRED(HttpStatus.UNAUTHORIZED, "EA016", "비밀번호가 만료되었습니다."),
+
+    /**
+     * 이메일 인증이 필요합니다.
+     *
+     * 상황: 이메일 인증이 완료되지 않은 상태에서 접근할 때
+     * HTTP 상태: 403 Forbidden
+     */
+    EMAIL_VERIFICATION_REQUIRED(HttpStatus.FORBIDDEN, "EA017", "이메일 인증이 필요합니다."),
+
+    /**
+     * 인증코드가 올바르지 않습니다.
+     *
+     * 상황: 입력한 이메일 인증코드가 일치하지 않을 때
+     * HTTP 상태: 400 Bad Request
+     */
+    INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "EA018", "인증코드가 올바르지 않습니다."),
+
+    /**
+     * 인증코드가 만료되었습니다.
+     *
+     * 상황: 이메일 인증코드의 유효시간이 초과되었을 때
+     * HTTP 상태: 400 Bad Request
+     */
+    EXPIRED_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "EA019", "인증코드가 만료되었습니다."),
+
+    /**
+     * 이미 인증된 이메일입니다.
+     *
+     * 상황: 이미 인증이 완료된 이메일로 다시 인증을 시도할 때
+     * HTTP 상태: 409 Conflict
+     */
+    EMAIL_ALREADY_VERIFIED(HttpStatus.CONFLICT, "EA020", "이미 인증된 이메일입니다.");
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드

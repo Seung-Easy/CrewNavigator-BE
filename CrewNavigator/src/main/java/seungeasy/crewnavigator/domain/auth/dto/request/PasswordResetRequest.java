@@ -7,14 +7,17 @@ import jakarta.validation.constraints.Pattern;
 /**
  * <pre>
  *  Class Name: PasswordResetRequest
- *  Description: 비밀번호 재설정 요청 DTO. 사용자 인증 후 새 비밀번호를 설정합니다.
+ *  Description: 비밀번호 재설정 요청 DTO. 이메일 인증 완료 후 새 비밀번호를 설정합니다.
+ *  이메일 인증(verify-code)이 선행되어야 합니다.
  *
- *  @param userId     사용자 ID (필수)
- *  @param email      이메일 주소 (필수)
+ *  @param userId      사용자 ID (필수)
+ *  @param email       이메일 주소 (필수)
  *  @param newPassword 새 비밀번호 (필수, 영문+숫자+특수문자 포함 8~20자)
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * 2026.06.15: Seung-Geon: code 필드 추가 (이메일 인증코드)
+ * 2026.06.15: Seung-Geon: code 필드 제거, email:verified 키 검증 방식으로 변경
  * </pre>
  *
  * @author Seung-Geon
