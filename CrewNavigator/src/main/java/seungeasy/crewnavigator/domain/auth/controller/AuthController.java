@@ -30,10 +30,12 @@ import java.util.List;
  *  [제공 API]
  *  - 회원가입, 로그인, 토큰 갱신, 로그아웃
  *  - 비밀번호 변경/재설정, 회원 탈퇴
- *  - 강제 로그아웃, 아이디 찾기, 내 정보 조회
+ *  - 아이디 찾기, 내 정보 조회
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * 2026.06.15: Seung-Geon: /auth/email/send-code, /auth/email/verify-code 엔드포인트 추가, signup 설명 업데이트
+ * 2026.06.15: Seung-Geon: forceLogout을 AuthAdminController(/admin/auth)로 분리
  * </pre>
  *
  * @author Seung-Geon
@@ -53,7 +55,23 @@ public class AuthController {
         return "Auth Health OK";
     }
 
-    @Operation(summary = "회원가입", description = "이메일과 비밀번호로 새로운 계정을 생성합니다.")
+    @Operation(summary = "이메일 인증코드 발송", description = "입력한 이메일로 6자리 인증코드를 발송합니다. 회원가입, 비밀번호 재설정, 아이디 찾기에 선행됩니다.")
+    @PostMapping("/email/send-code")
+    public ResponseEntity<CustomResponse<Void>> sendVerificationCode(
+            @Valid @RequestBody SendVerificationCodeRequest request) {
+        authCommandService.sendVerificationCode(request);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+    }
+
+    @Operation(summary = "이메일 인증코드 확인", description = "발송된 인증코드를 확인하고 이메일 인증을 완료합니다. 인증 후 30분 이내에 회원가입을 완료해야 합니다.")
+    @PostMapping("/email/verify-code")
+    public ResponseEntity<CustomResponse<Void>> verifyEmailCode(
+            @Valid @RequestBody VerifyCodeRequest request) {
+        authCommandService.verifyEmailCode(request);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+    }
+
+    @Operation(summary = "회원가입", description = "이메일 인증이 완료된 계정으로 회원가입합니다. /auth/email/send-code → /auth/email/verify-code 선행 필수.")
     @PostMapping("/signup")
     public ResponseEntity<CustomResponse<Void>> signup(@Valid @RequestBody SignupRequest request) {
         authCommandService.signup(request);
@@ -114,7 +132,7 @@ public class AuthController {
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
 
-    @Operation(summary = "비밀번호 재설정", description = "아이디와 이메일 인증을 통해 비밀번호를 재설정합니다.")
+    @Operation(summary = "비밀번호 재설정", description = "이메일 인증(verify-code)을 완료한 후 새 비밀번호를 설정합니다. /auth/email/send-code → /auth/email/verify-code 선행 필수.")
     @PostMapping("/password/reset")
     public ResponseEntity<CustomResponse<Void>> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
         authCommandService.resetPassword(request);
@@ -128,17 +146,7 @@ public class AuthController {
         authCommandService.deleteAccount(userDetails.getUsername());
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
-
-    @Operation(summary = "강제 로그아웃", description = "관리자가 특정 사용자를 강제 로그아웃 처리합니다.")
-    @PostMapping("/force-logout/{userId}")
-    public ResponseEntity<CustomResponse<Void>> forceLogout(
-            @AuthenticationPrincipal CustomUserDetails adminDetails,
-            @PathVariable String userId) {
-        authCommandService.forceLogout(userId, adminDetails.getUsername());
-        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
-    }
-
-    @Operation(summary = "아이디 찾기", description = "이름과 이메일로 가입된 아이디를 조회합니다.")
+    @Operation(summary = "아이디 찾기", description = "이메일 인증(verify-code)을 완료한 후 이름과 이메일로 가입된 아이디를 조회합니다. /auth/email/send-code → /auth/email/verify-code 선행 필수.")
     @GetMapping("/find-id")
     public ResponseEntity<CustomResponse<List<String>>> findId(@Valid @RequestBody FindIdRequest request) {
         List<String> userIds = authQueryService.findUserId(request);
