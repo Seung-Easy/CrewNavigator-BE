@@ -17,6 +17,7 @@ import seungeasy.crewnavigator.domain.auth.security.JwtProvider;
 import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,10 +33,15 @@ import java.util.concurrent.TimeUnit;
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
  * 2026.06.15: Seung-Geon: sendVerificationCode, verifyEmailCode 구현, signup 이메일 인증 확인 로직 추가, resetPassword 코드 검증 + 계정 잠금 해제 로직 추가
  * 2026.06.15: Seung-Geon: resetPassword email:verified 키 검증 방식으로 변경 (code 직접 입력 → verify-code 선행)
+ * 2026.06.16: Seung-Geon: sendResetCode 메서드 구현 (userId+email 검증 후 reset type으로 코드 발송)
+ * 2026.06.16: Seung-Geon: verifyEmailCode, signup, resetPassword Redis 키에 type 포함하도록 변경 (용도 분리)
+ * 2026.06.16: Seung-Geon: restoreAccount, reactivateAccount 메서드 구현
+ * 2026.06.16: Seung-Geon: sendVerificationCode reactivate type 처리 추가 (INACTIVE 사용자 확인)
+ * 2026.06.16: Seung-Geon: changeUserRole 구현 (기존 권한 제거 + 새 권한 부여)
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.2
  */
 @Slf4j
 @Service
@@ -43,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 public class AuthCommandServiceImpl implements AuthCommandService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
     private final LoginHistoryRepository loginHistoryRepository;
     private final PasswordHistoryRepository passwordHistoryRepository;
     private final PasswordEncoder passwordEncoder;
@@ -55,7 +63,29 @@ public class AuthCommandServiceImpl implements AuthCommandService {
      */
     @Override
     public void sendVerificationCode(SendVerificationCodeRequest request) {
-        emailService.sendVerificationCode(request.email());
+        // reactivate 요청 시 해당 이메일의 INACTIVE 사용자 존재 여부 확인
+        if ("reactivate".equals(request.type())) {
+            userRepository.findByEmail(request.email())
+                    .filter(u -> u.getStatus() == UserStatus.INACTIVE)
+                    .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+        }
+
+        emailService.sendVerificationCode(request.email(), request.type());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void sendResetCode(SendResetCodeRequest request) {
+        // userId + email 조합이 DB에 존재하는지 검증
+        User user = userRepository.findByEmail(request.email())
+                .filter(u -> u.getUserId().equals(request.userId()))
+                .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+
+        // 존재하면 인증코드 발송 (type=reset)
+        emailService.sendVerificationCode(request.email(), "reset");
+        log.info("Password reset code sent to {} for user: {}", request.email(), request.userId());
     }
 
     /**
@@ -63,8 +93,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
      */
     @Override
     public void verifyEmailCode(VerifyCodeRequest request) {
-        String redisKey = "email:code:" + request.email();
-        Object storedCode = redisService.get(redisKey);
+        String codeKey = "email:code:" + request.type() + ":" + request.email();
+        Object storedCode = redisService.get(codeKey);
         
         if (storedCode == null) {
             throw new BusinessException(ResponseCode.EXPIRED_VERIFICATION_CODE);
@@ -73,9 +103,10 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new BusinessException(ResponseCode.INVALID_VERIFICATION_CODE);
         }
         
-        redisService.delete(redisKey);
-        // Mark email as verified for 30 minutes (enough time to complete signup)
-        redisService.save("email:verified:" + request.email(), true, 30, TimeUnit.MINUTES);
+        redisService.delete(codeKey);
+        // Mark email as verified for 30 minutes with type-specific key
+        String verifiedKey = "email:verified:" + request.type() + ":" + request.email();
+        redisService.save(verifiedKey, true, 30, TimeUnit.MINUTES);
     }
 
     /**
@@ -84,8 +115,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     @Override
     @Transactional
     public void signup(SignupRequest request) {
-        // 이메일 인증 확인
-        String verifiedKey = "email:verified:" + request.email();
+        // 이메일 인증 확인 (signup 용도)
+        String verifiedKey = "email:verified:signup:" + request.email();
         if (!redisService.hasKey(verifiedKey)) {
             throw new BusinessException(ResponseCode.EMAIL_VERIFICATION_REQUIRED);
         }
@@ -196,8 +227,8 @@ public class AuthCommandServiceImpl implements AuthCommandService {
     @Override
     @Transactional
     public void resetPassword(PasswordResetRequest request) {
-        // 이메일 인증 확인 (verify-code 선행 필수)
-        String verifiedKey = "email:verified:" + request.email();
+        // 이메일 인증 확인 (reset 용도, verify-code 선행 필수)
+        String verifiedKey = "email:verified:reset:" + request.email();
         if (!redisService.hasKey(verifiedKey)) {
             throw new BusinessException(ResponseCode.EMAIL_VERIFICATION_REQUIRED);
         }
@@ -253,5 +284,79 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         redisService.delete(redisKey);
 
         log.info("User force logged out by admin {}: {}", adminId, userId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void restoreAccount(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.LEAVE) {
+            throw new BusinessException(ResponseCode.INVALID_INPUT_VALUE);
+        }
+
+        user.setStatus(UserStatus.INACTIVE);
+        user.setDeletedAt(null);
+        userRepository.save(user);
+
+        log.info("Account restored by admin: {} (LEAVE → INACTIVE)", userId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void reactivateAccount(ReactivateRequest request) {
+        // 이메일 인증 확인 (reactivate 용도)
+        String verifiedKey = "email:verified:reactivate:" + request.email();
+        if (!redisService.hasKey(verifiedKey)) {
+            throw new BusinessException(ResponseCode.EMAIL_VERIFICATION_REQUIRED);
+        }
+        redisService.delete(verifiedKey);
+
+        // INACTIVE 사용자 조회
+        User user = userRepository.findByEmail(request.email())
+                .filter(u -> u.getStatus() == UserStatus.INACTIVE)
+                .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+
+        // 계정 활성화
+        user.setStatus(UserStatus.ACTIVE);
+
+        // 계정 잠금 해제
+        if ("Y".equals(user.getIsLocked())) {
+            user.setIsLocked("N");
+            user.setLoginFailCount(0);
+        }
+
+        userRepository.save(user);
+        log.info("Account reactivated: {} (INACTIVE → ACTIVE)", user.getUserId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void changeUserRole(String userId, String roleName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+
+        Role role = roleRepository.findByRoleName(roleName)
+                .orElseThrow(() -> new BusinessException(ResponseCode.INVALID_INPUT_VALUE));
+
+        // 기존 권한 제거
+        List<UserRole> existingRoles = userRoleRepository.findByIdUserId(userId);
+        userRoleRepository.deleteAll(existingRoles);
+
+        // 새 권한 부여
+        UserRole newRole = new UserRole(role.getRoleId(), userId);
+        userRoleRepository.save(newRole);
+
+        log.info("User role changed: {} → {}", userId, roleName);
     }
 }

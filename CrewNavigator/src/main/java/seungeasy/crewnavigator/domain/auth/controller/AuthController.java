@@ -36,10 +36,12 @@ import java.util.List;
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
  * 2026.06.15: Seung-Geon: /auth/email/send-code, /auth/email/verify-code 엔드포인트 추가, signup 설명 업데이트
  * 2026.06.15: Seung-Geon: forceLogout을 AuthAdminController(/admin/auth)로 분리
+ * 2026.06.16: Seung-Geon: /auth/email/send-code-reset 엔드포인트 추가 (userId+email 검증)
+ * 2026.06.16: Seung-Geon: /auth/account/reactivate 엔드포인트 추가 (INACTIVE → ACTIVE)
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.2
  */
 @RestController
 @RequestMapping("/auth")
@@ -55,7 +57,7 @@ public class AuthController {
         return "Auth Health OK";
     }
 
-    @Operation(summary = "이메일 인증코드 발송", description = "입력한 이메일로 6자리 인증코드를 발송합니다. 회원가입, 비밀번호 재설정, 아이디 찾기에 선행됩니다.")
+    @Operation(summary = "이메일 인증코드 발송", description = "입력한 이메일로 6자리 인증코드를 발송합니다. 회원가입, 아이디 찾기에 선행됩니다.")
     @PostMapping("/email/send-code")
     public ResponseEntity<CustomResponse<Void>> sendVerificationCode(
             @Valid @RequestBody SendVerificationCodeRequest request) {
@@ -63,7 +65,15 @@ public class AuthController {
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
 
-    @Operation(summary = "이메일 인증코드 확인", description = "발송된 인증코드를 확인하고 이메일 인증을 완료합니다. 인증 후 30분 이내에 회원가입을 완료해야 합니다.")
+    @Operation(summary = "비밀번호 재설정 인증코드 발송", description = "아이디와 이메일을 입력하여 비밀번호 재설정을 위한 인증코드를 발송합니다. 회원가입용 send-code와 달리 userId 검증이 추가되어, 아이디를 아는 사용자만 요청할 수 있습니다.")
+    @PostMapping("/email/send-code-reset")
+    public ResponseEntity<CustomResponse<Void>> sendResetCode(
+            @Valid @RequestBody SendResetCodeRequest request) {
+        authCommandService.sendResetCode(request);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+    }
+
+    @Operation(summary = "이메일 인증코드 확인", description = "발송된 인증코드를 확인하고 이메일 인증을 완료합니다. 인증 후 30분 이내에 회원가입/아이디 찾기/비밀번호 재설정을 완료해야 합니다.")
     @PostMapping("/email/verify-code")
     public ResponseEntity<CustomResponse<Void>> verifyEmailCode(
             @Valid @RequestBody VerifyCodeRequest request) {
@@ -136,6 +146,14 @@ public class AuthController {
     @PostMapping("/password/reset")
     public ResponseEntity<CustomResponse<Void>> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
         authCommandService.resetPassword(request);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+    }
+
+    @Operation(summary = "계정 재활성화", description = "이메일 인증(verify-code, type=reactivate)을 완료한 비활성(INACTIVE) 계정을 활성(ACTIVE) 상태로 전환합니다. POST /auth/email/send-code(type=reactivate) → POST /auth/email/verify-code(type=reactivate) 선행 필수.")
+    @PutMapping("/account/reactivate")
+    public ResponseEntity<CustomResponse<Void>> reactivateAccount(
+            @Valid @RequestBody ReactivateRequest request) {
+        authCommandService.reactivateAccount(request);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
 

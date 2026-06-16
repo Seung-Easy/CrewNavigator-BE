@@ -1,7 +1,11 @@
 package seungeasy.crewnavigator.domain.auth.service;
 
+import org.springframework.data.domain.Page;
 import seungeasy.crewnavigator.domain.auth.dto.request.FindIdRequest;
+import seungeasy.crewnavigator.domain.auth.dto.response.AdminUserResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserInfoResponse;
+import seungeasy.crewnavigator.domain.auth.dto.response.UserStatisticsResponse;
+import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 
 import java.util.List;
 
@@ -13,13 +17,15 @@ import java.util.List;
  *  [제공 기능]
  *  - 아이디 찾기
  *  - 내 정보 조회
+ *  - 관리자용 회원 목록/상세/통계 조회
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 인터페이스 생성
+ * 2026.06.16: Seung-Geon: searchUsers, getAdminUserDetail, getUserStatistics 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.1
  */
 public interface AuthQueryService {
 
@@ -40,4 +46,38 @@ public interface AuthQueryService {
      * @throws seungeasy.crewnavigator.common.exception.BusinessException 사용자를 찾을 수 없을 시
      */
     UserInfoResponse getUserInfo(String userId);
+
+    /**
+     * 관리자용 회원 목록을 검색합니다. (페이징 + 상태/키워드 필터)
+     *
+     * @param status  필터링할 계정 상태 (null이면 전체)
+     * @param keyword 검색어 (userId/name/email LIKE 검색, null이면 전체)
+     * @param page    페이지 번호 (0-based)
+     * @param size    페이지 크기
+     * @return 페이징된 회원 목록
+     */
+    Page<AdminUserResponse> searchUsers(UserStatus status, String keyword, int page, int size);
+
+    /**
+     * 관리자가 특정 사용자의 상세 정보를 조회합니다.
+     *
+     * @param userId 조회할 사용자 ID
+     * @return 사용자 상세 정보 (권한 포함)
+     * @throws seungeasy.crewnavigator.common.exception.BusinessException 사용자를 찾을 수 없을 시
+     */
+    AdminUserResponse getAdminUserDetail(String userId);
+
+    /**
+     * 회원 통계 정보를 조회합니다. (전체 수, 상태별/권한별 분포, 오늘 가입 수)
+     *
+     * @return 회원 통계 정보
+     */
+    UserStatisticsResponse getUserStatistics();
+
+    /**
+     * 전체 Role 권한명 목록을 조회합니다.
+     *
+     * @return Role명 목록 (예: ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR", "ROLE_USER"])
+     */
+    List<String> getAllRoleNames();
 }

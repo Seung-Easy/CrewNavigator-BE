@@ -15,10 +15,12 @@ import seungeasy.crewnavigator.domain.auth.dto.response.TokenResponse;
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 인터페이스 생성
  * 2026.06.15: Seung-Geon: sendVerificationCode, verifyEmailCode 메서드 추가
+ * 2026.06.16: Seung-Geon: sendResetCode 메서드 추가
+ * 2026.06.16: Seung-Geon: restoreAccount, reactivateAccount 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.1
  */
 public interface AuthCommandService {
 
@@ -35,6 +37,15 @@ public interface AuthCommandService {
      * @param request 이메일과 인증 코드 정보
      */
     void verifyEmailCode(VerifyCodeRequest request);
+
+    /**
+     * 비밀번호 재설정을 위한 인증코드를 발송합니다.
+     * 아이디와 이메일을 모두 입력받아 DB에 일치하는 사용자가 있을 경우에만 발송됩니다.
+     * (회원가입용 send-code와 달리 userId 검증이 추가됩니다.)
+     *
+     * @param request 사용자 ID와 이메일 정보
+     */
+    void sendResetCode(SendResetCodeRequest request);
 
     /**
      * 신규 사용자를 등록합니다.
@@ -93,4 +104,31 @@ public interface AuthCommandService {
      * @param adminId 요청을 수행한 관리자 ID
      */
     void forceLogout(String userId, String adminId);
+
+    /**
+     * 관리자가 탈퇴(LEAVE)한 계정을 복구합니다. 상태를 INACTIVE로 변경하고 deletedAt을 null로 설정합니다.
+     * 사용자는 이후 이메일 인증을 통해 계정을 재활성화(ACTIVE)할 수 있습니다.
+     *
+     * @param userId 복구할 사용자 ID
+     */
+    void restoreAccount(String userId);
+
+    /**
+     * 이메일 인증을 완료한 비활성(INACTIVE) 계정을 활성(ACTIVE) 상태로 전환합니다.
+     * 계정이 잠겨있는 경우 함께 해제됩니다.
+     * POST /auth/email/send-code → POST /auth/email/verify-code (type=reactivate) 선행 필수.
+     *
+     * @param request 이메일 정보
+     */
+    void reactivateAccount(ReactivateRequest request);
+
+    /**
+     * 관리자가 특정 사용자의 권한을 변경합니다.
+     * 기존 권한을 모두 제거하고 새 권한 하나를 부여합니다.
+     *
+     * @param userId   대상 사용자 ID
+     * @param roleName 부여할 권한명 (예: ROLE_MANAGER, ROLE_OPERATOR)
+     * @throws seungeasy.crewnavigator.common.exception.BusinessException 사용자 또는 권한을 찾을 수 없을 시
+     */
+    void changeUserRole(String userId, String roleName);
 }

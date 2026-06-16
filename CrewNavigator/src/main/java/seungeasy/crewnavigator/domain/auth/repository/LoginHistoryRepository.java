@@ -24,6 +24,8 @@ import java.util.List;
 public interface LoginHistoryRepository extends JpaRepository<LoginHistory, Long> {
     List<LoginHistory> findByUserIdOrderByLoginAtDesc(String userId);
 
+    void deleteByUserId(String userId);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM LoginHistory lh WHERE lh.loginAt < :cutoff")

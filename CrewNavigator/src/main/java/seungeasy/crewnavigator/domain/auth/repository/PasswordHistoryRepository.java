@@ -19,4 +19,6 @@ import java.util.List;
  */
 public interface PasswordHistoryRepository extends JpaRepository<PasswordHistory, Long> {
     List<PasswordHistory> findByUserIdOrderByChangedAtDesc(String userId);
+
+    void deleteByUserId(String userId);
 }
