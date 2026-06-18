@@ -19,6 +19,7 @@ import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * <pre>
@@ -140,7 +141,14 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         user.setAddress(request.address());
 
         userRepository.save(user);
-        log.info("User signed up: {}", request.userId());
+
+        // ROLE_USER 자동 부여
+        Role userRole = roleRepository.findByRoleName("ROLE_USER")
+                .orElseThrow(() -> new BusinessException(ResponseCode.INVALID_INPUT_VALUE));
+        UserRole userRoleEntity = new UserRole(userRole.getRoleId(), request.userId());
+        userRoleRepository.save(userRoleEntity);
+
+        log.info("User signed up: {} (ROLE_USER assigned)", request.userId());
     }
 
     /**
@@ -207,6 +215,9 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new BusinessException(ResponseCode.INVALID_PASSWORD);
         }
 
+        // 최근 비밀번호 재사용 검증
+        checkPasswordReuse(userId, request.newPassword());
+
         // 비밀번호 이력 저장
         PasswordHistory history = new PasswordHistory();
         history.setUserId(userId);
@@ -238,6 +249,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         User user = userRepository.findByEmail(request.email())
                 .filter(u -> u.getUserId().equals(request.userId()))
                 .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+
+        // 최근 비밀번호 재사용 검증
+        checkPasswordReuse(user.getUserId(), request.newPassword());
+
+        // 변경 전 비밀번호 백업 (history 저장용)
+        String oldPassword = user.getPassword();
         
         // 비밀번호 변경
         user.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -249,6 +266,14 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         }
         
         userRepository.save(user);
+
+        // 비밀번호 이력 저장
+        PasswordHistory history = new PasswordHistory();
+        history.setUserId(user.getUserId());
+        history.setBeforeChangedPwd(oldPassword);
+        history.setChangedAt(LocalDateTime.now());
+        passwordHistoryRepository.save(history);
+
         log.info("Password reset for user: {}. Account locked: {}", request.userId(), "Y".equals(user.getIsLocked()) ? "해제됨" : "해당없음");
     }
 
@@ -257,7 +282,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
      */
     @Override
     @Transactional
-    public void deleteAccount(String userId) {
+    public void deleteAccount(String userId, String accessToken) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
 
@@ -265,11 +290,15 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         String redisKey = "refresh:" + userId;
         redisService.delete(redisKey);
 
+        // Access Token 블랙리스트 등록
+        String blacklistKey = "blacklist:" + accessToken;
+        redisService.save(blacklistKey, "WITHDRAWN", jwtProvider.getAccessTokenExpiration(), TimeUnit.MILLISECONDS);
+
         user.setStatus(UserStatus.LEAVE);
         user.setDeletedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        log.info("User deleted: {}", userId);
+        log.info("User deleted: {} (access token blacklisted)", userId);
     }
 
     /**
@@ -358,5 +387,23 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         userRoleRepository.save(newRole);
 
         log.info("User role changed: {} → {}", userId, roleName);
+    }
+
+    /**
+     * 최근 비밀번호 재사용을 검증합니다.
+     * 최근 3회 이내에 사용한 비밀번호와 동일하면 RECENTLY_USED_PASSWORD 예외를 발생시킵니다.
+     *
+     * @param userId    검증할 사용자 ID
+     * @param newPassword 새 비밀번호 (평문)
+     * @throws seungeasy.crewnavigator.common.exception.BusinessException 최근 사용한 비밀번호와 동일할 시
+     */
+    private void checkPasswordReuse(String userId, String newPassword) {
+        List<PasswordHistory> recentHistories = passwordHistoryRepository.findByUserIdOrderByChangedAtDesc(userId);
+        int checkCount = Math.min(recentHistories.size(), 3);
+        for (int i = 0; i < checkCount; i++) {
+            if (passwordEncoder.matches(newPassword, recentHistories.get(i).getBeforeChangedPwd())) {
+                throw new BusinessException(ResponseCode.RECENTLY_USED_PASSWORD);
+            }
+        }
     }
 }

@@ -157,11 +157,13 @@ public class AuthController {
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
 
-    @Operation(summary = "회원 탈퇴", description = "계정을 탈퇴 처리합니다.")
+    @Operation(summary = "회원 탈퇴", description = "계정을 탈퇴 처리합니다. 탈퇴 후 Access Token은 블랙리스트에 등록되어 더 이상 사용할 수 없습니다.")
     @DeleteMapping("/account")
     public ResponseEntity<CustomResponse<Void>> deleteAccount(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        authCommandService.deleteAccount(userDetails.getUsername());
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Authorization") String bearerToken) {
+        String accessToken = bearerToken.substring(7);
+        authCommandService.deleteAccount(userDetails.getUsername(), accessToken);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
     @Operation(summary = "아이디 찾기", description = "이메일 인증(verify-code)을 완료한 후 이름과 이메일로 가입된 아이디를 조회합니다. /auth/email/send-code → /auth/email/verify-code 선행 필수.")

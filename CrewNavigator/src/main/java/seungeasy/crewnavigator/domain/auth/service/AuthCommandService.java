@@ -91,11 +91,13 @@ public interface AuthCommandService {
 
     /**
      * 계정을 탈퇴 처리합니다. (soft delete — status를 LEAVE로 변경)
+     * 탈퇴 시 Refresh Token을 삭제하고 Access Token을 블랙리스트에 등록합니다.
      *
-     * @param userId 탈퇴할 사용자 ID
+     * @param userId      탈퇴할 사용자 ID
+     * @param accessToken 블랙리스트에 등록할 Access Token
      * @throws seungeasy.crewnavigator.common.exception.BusinessException 사용자를 찾을 수 없을 시
      */
-    void deleteAccount(String userId);
+    void deleteAccount(String userId, String accessToken);
 
     /**
      * 관리자가 특정 사용자를 강제 로그아웃 처리합니다. Redis에서 Refresh Token을 삭제합니다.
