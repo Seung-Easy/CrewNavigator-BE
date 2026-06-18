@@ -249,7 +249,15 @@ public enum ResponseCode {
      * 상황: 이미 인증이 완료된 이메일로 다시 인증을 시도할 때
      * HTTP 상태: 409 Conflict
      */
-    EMAIL_ALREADY_VERIFIED(HttpStatus.CONFLICT, "EA020", "이미 인증된 이메일입니다.");
+    EMAIL_ALREADY_VERIFIED(HttpStatus.CONFLICT, "EA020", "이미 인증된 이메일입니다."),
+
+    /**
+     * 최근 사용한 비밀번호로 변경할 수 없습니다.
+     *
+     * 상황: 비밀번호 변경/재설정 시 최근 3회 이내에 사용한 비밀번호와 동일한 비밀번호로 요청할 때
+     * HTTP 상태: 400 Bad Request
+     */
+    RECENTLY_USED_PASSWORD(HttpStatus.BAD_REQUEST, "EA021", "최근 사용한 비밀번호로 변경할 수 없습니다.");
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드
