@@ -1,4 +1,4 @@
-package seungeasy.crewnavigator.common.reids;
+package seungeasy.crewnavigator.common.infra.redis;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
