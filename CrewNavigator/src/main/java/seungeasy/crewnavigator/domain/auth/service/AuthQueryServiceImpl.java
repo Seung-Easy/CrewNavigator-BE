@@ -12,12 +12,16 @@ import seungeasy.crewnavigator.common.infra.redis.RedisService;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.dto.request.FindIdRequest;
 import seungeasy.crewnavigator.domain.auth.dto.response.AdminUserResponse;
+import seungeasy.crewnavigator.domain.auth.dto.response.ActiveSessionResponse;
+import seungeasy.crewnavigator.domain.auth.dto.response.LoginHistoryResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserInfoResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserStatisticsResponse;
 import seungeasy.crewnavigator.domain.auth.dto.row.AdminUserRow;
 import seungeasy.crewnavigator.domain.auth.dto.row.RoleCountRow;
 import seungeasy.crewnavigator.domain.auth.dto.row.StatusCountRow;
+import seungeasy.crewnavigator.domain.auth.entity.LoginHistory;
 import seungeasy.crewnavigator.domain.auth.mapper.AuthQueryMapper;
+import seungeasy.crewnavigator.domain.auth.repository.LoginHistoryRepository;
 import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 
 import java.time.LocalDate;
@@ -47,10 +51,11 @@ import java.util.stream.Collectors;
  * 2026.06.16: Seung-Geon: searchUsers, getAdminUserDetail, getUserStatistics 구현
  * 2026.06.16: Seung-Geon: getAllRoleNames 구현 (Role 목록 조회)
  * 2026.06.16: Seung-Geon: JPA @Query → MyBatis 마이그레이션 (CQRS: Query는 MyBatis로 전환)
+ * 2026.06.22: Seung-Geon: getMyLoginHistory 메서드 구현 (내 로그인 이력 페이지네이션)
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.4
+ * @version 1.5
  */
 @Slf4j
 @Service
@@ -59,6 +64,7 @@ public class AuthQueryServiceImpl implements AuthQueryService {
 
     private final AuthQueryMapper authQueryMapper;
     private final RedisService redisService;
+    private final LoginHistoryRepository loginHistoryRepository;
 
     /**
      * {@inheritDoc}
@@ -189,6 +195,59 @@ public class AuthQueryServiceImpl implements AuthQueryService {
     @Transactional(readOnly = true)
     public List<String> getAllRoleNames() {
         return authQueryMapper.getAllRoleNames();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ActiveSessionResponse> getActiveSessions() {
+        Set<String> keys = redisService.keys("refresh:*");
+        if (keys == null || keys.isEmpty()) {
+            return List.of();
+        }
+
+        return keys.stream()
+                .map(key -> key.substring("refresh:".length()))  // "refresh:userId" → "userId"
+                .map(userId -> new ActiveSessionResponse(userId, 1))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<LoginHistoryResponse> getMyLoginHistory(String userId, int page, int size) {
+        // 전체 이력 조회 (최신순)
+        List<LoginHistory> allHistories = loginHistoryRepository.findByUserIdOrderByLoginAtDesc(userId);
+
+        // 전체 카운트
+        long totalCount = allHistories.size();
+
+        // 페이지네이션 적용 (서브리스트)
+        int start = page * size;
+        int end = Math.min(start + size, allHistories.size());
+        List<LoginHistoryResponse> content;
+        if (start >= allHistories.size()) {
+            content = List.of();
+        } else {
+            List<LoginHistory> pageData = allHistories.subList(start, end);
+            content = new ArrayList<>(pageData.size());
+            for (int i = 0; i < pageData.size(); i++) {
+                LoginHistory h = pageData.get(i);
+                content.add(new LoginHistoryResponse(
+                        (int) totalCount - start - i,  // seq: 전체 기준 1이 가장 오래된 로그인
+                        h.getLoginHistoryId(),
+                        h.getLoginAt(),
+                        h.getIpAddress(),
+                        h.getIsActivated()
+                ));
+            }
+        }
+
+        return new PageImpl<>(content, PageRequest.of(page, size), totalCount);
     }
 
     /**

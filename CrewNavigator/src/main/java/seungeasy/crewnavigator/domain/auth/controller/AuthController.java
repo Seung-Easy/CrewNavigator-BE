@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import seungeasy.crewnavigator.common.response.CustomResponse;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.dto.request.*;
+import seungeasy.crewnavigator.domain.auth.dto.response.LoginHistoryResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.TokenResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserInfoResponse;
 import seungeasy.crewnavigator.domain.auth.security.CustomUserDetails;
+import org.springframework.data.domain.Page;
 import seungeasy.crewnavigator.domain.auth.service.AuthCommandService;
 import seungeasy.crewnavigator.domain.auth.service.AuthQueryService;
 
@@ -38,10 +40,11 @@ import java.util.List;
  * 2026.06.15: Seung-Geon: forceLogout을 AuthAdminController(/admin/auth)로 분리
  * 2026.06.16: Seung-Geon: /auth/email/send-code-reset 엔드포인트 추가 (userId+email 검증)
  * 2026.06.16: Seung-Geon: /auth/account/reactivate 엔드포인트 추가 (INACTIVE → ACTIVE)
+ * 2026.06.22: Seung-Geon: /auth/me/login-history 엔드포인트 추가 (내 로그인 이력 조회)
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.2
+ * @version 1.3
  */
 @RestController
 @RequestMapping("/auth")
@@ -166,6 +169,16 @@ public class AuthController {
         authCommandService.deleteAccount(userDetails.getUsername(), accessToken);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
     }
+    @Operation(summary = "내 로그인 이력 조회", description = "현재 로그인된 사용자의 로그인 이력을 최신순으로 페이지네이션하여 조회합니다.")
+    @GetMapping("/me/login-history")
+    public ResponseEntity<CustomResponse<Page<LoginHistoryResponse>>> getMyLoginHistory(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<LoginHistoryResponse> result = authQueryService.getMyLoginHistory(userDetails.getUsername(), page, size);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, result));
+    }
+
     @Operation(summary = "아이디 찾기", description = "이메일 인증(verify-code)을 완료한 후 이름과 이메일로 가입된 아이디를 조회합니다. /auth/email/send-code → /auth/email/verify-code 선행 필수.")
     @GetMapping("/find-id")
     public ResponseEntity<CustomResponse<List<String>>> findId(@Valid @RequestBody FindIdRequest request) {

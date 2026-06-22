@@ -8,6 +8,8 @@ import seungeasy.crewnavigator.domain.auth.dto.response.UserStatisticsResponse;
 import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 
 import java.util.List;
+import seungeasy.crewnavigator.domain.auth.dto.response.ActiveSessionResponse;
+import seungeasy.crewnavigator.domain.auth.dto.response.LoginHistoryResponse;
 
 /**
  * <pre>
@@ -17,15 +19,17 @@ import java.util.List;
  *  [제공 기능]
  *  - 아이디 찾기
  *  - 내 정보 조회
+ *  - 내 로그인 이력 조회
  *  - 관리자용 회원 목록/상세/통계 조회
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 인터페이스 생성
  * 2026.06.16: Seung-Geon: searchUsers, getAdminUserDetail, getUserStatistics 메서드 추가
+ * 2026.06.22: Seung-Geon: getMyLoginHistory, getActiveSessions 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.1
+ * @version 1.3
  */
 public interface AuthQueryService {
 
@@ -80,4 +84,21 @@ public interface AuthQueryService {
      * @return Role명 목록 (예: ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_OPERATOR", "ROLE_USER"])
      */
     List<String> getAllRoleNames();
+
+    /**
+     * 내 로그인 이력을 최신순으로 페이지네이션하여 조회합니다.
+     *
+     * @param userId 조회할 사용자 ID
+     * @param page   페이지 번호 (0-based)
+     * @param size   페이지 크기
+     * @return 페이징된 로그인 이력 목록
+     */
+    Page<LoginHistoryResponse> getMyLoginHistory(String userId, int page, int size);
+
+    /**
+     * 현재 로그인 중인(Redis에 refresh token이 있는) 활성 세션 목록을 조회합니다.
+     *
+     * @return 활성 세션 목록 (userId, 세션 수)
+     */
+    List<ActiveSessionResponse> getActiveSessions();
 }
