@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,8 +22,8 @@ import java.util.concurrent.TimeUnit;
  *  2026.06.11: Seung-Geon: Javadoc 주석 추가
  * </pre>
  *
- * @author seung-geon
- * @version 1.0
+ *  @author seung-geon
+ * @version 1.1
  */
 @Component
 @RequiredArgsConstructor
@@ -69,6 +70,20 @@ public class RedisService {
      */
     public boolean hasKey(String key) {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    /**
+     * Redis에서 패턴에 일치하는 모든 키를 조회합니다.
+     * <p>
+     * <b>운영 환경 주의:</b> 이 메서드는 내부적으로 {@code KEYS} 명령을 사용하므로
+     * 키 개수가 많을 경우 성능에 영향을 줄 수 있습니다.
+     * 실제 운영 환경에서는 {@code SCAN} 명령 사용을 권장합니다.
+     *
+     * @param pattern 키 패턴 (예: "refresh:*")
+     * @return 일치하는 키의 Set (없으면 빈 Set)
+     */
+    public Set<String> keys(String pattern) {
+        return redisTemplate.keys(pattern);
     }
 
     /**

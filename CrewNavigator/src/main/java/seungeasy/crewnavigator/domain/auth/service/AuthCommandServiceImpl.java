@@ -39,10 +39,11 @@ import java.util.stream.Collectors;
  * 2026.06.16: Seung-Geon: restoreAccount, reactivateAccount 메서드 구현
  * 2026.06.16: Seung-Geon: sendVerificationCode reactivate type 처리 추가 (INACTIVE 사용자 확인)
  * 2026.06.16: Seung-Geon: changeUserRole 구현 (기존 권한 제거 + 새 권한 부여)
+ * 2026.06.22: Seung-Geon: forceLogout is_locked + blacklist:user:{userId} 저장, resetPassword unlock 시 blacklist 정리
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.2
+ * @version 1.3
  */
 @Slf4j
 @Service
@@ -215,6 +216,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
             throw new BusinessException(ResponseCode.INVALID_PASSWORD);
         }
 
+        // 현재 비밀번호와 동일한지 검증
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new BusinessException(ResponseCode.SAME_AS_CURRENT_PASSWORD);
+        }
+
         // 최근 비밀번호 재사용 검증
         checkPasswordReuse(userId, request.newPassword());
 
@@ -250,6 +256,11 @@ public class AuthCommandServiceImpl implements AuthCommandService {
                 .filter(u -> u.getUserId().equals(request.userId()))
                 .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
 
+        // 현재 비밀번호와 동일한지 검증
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new BusinessException(ResponseCode.SAME_AS_CURRENT_PASSWORD);
+        }
+
         // 최근 비밀번호 재사용 검증
         checkPasswordReuse(user.getUserId(), request.newPassword());
 
@@ -263,6 +274,12 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         if ("Y".equals(user.getIsLocked())) {
             user.setIsLocked("N");
             user.setLoginFailCount(0);
+
+            // 강제 로그아웃 블랙리스트 해제 (forceLogout 시에만 존재, 없으면 skip)
+            String userBlacklistKey = "blacklist:user:" + user.getUserId();
+            if (redisService.hasKey(userBlacklistKey)) {
+                redisService.delete(userBlacklistKey);
+            }
         }
         
         userRepository.save(user);
@@ -312,7 +329,17 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         String redisKey = "refresh:" + userId;
         redisService.delete(redisKey);
 
-        log.info("User force logged out by admin {}: {}", adminId, userId);
+        // AccessToken 차단: blacklist:user:{userId} 저장 (TTL=accessToken 만료 시간)
+        String userBlacklistKey = "blacklist:user:" + userId;
+        redisService.save(userBlacklistKey, "FORCE_LOGOUT", jwtProvider.getAccessTokenExpiration(), TimeUnit.MILLISECONDS);
+
+        // 로그인 차단: DB is_locked = "Y"
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
+        user.setIsLocked("Y");
+        userRepository.save(user);
+
+        log.info("User force logged out by admin {}: {} (account locked, token blacklisted)", adminId, userId);
     }
 
     /**

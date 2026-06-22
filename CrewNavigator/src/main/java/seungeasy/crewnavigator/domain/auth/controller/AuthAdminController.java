@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import seungeasy.crewnavigator.common.response.CustomResponse;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.dto.request.ChangeRoleRequest;
+import seungeasy.crewnavigator.domain.auth.dto.response.ActiveSessionResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.AdminUserResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserStatisticsResponse;
 import seungeasy.crewnavigator.domain.auth.security.CustomUserDetails;
@@ -40,10 +41,11 @@ import java.util.List;
  * 2026.06.16: Seung-Geon: /admin/auth/restore/{userId} 계정 복구 엔드포인트 추가 (LEAVE → INACTIVE)
  * 2026.06.16: Seung-Geon: RoleHierarchy 도입, @PreAuthorize 기반 권한 제어로 변경
  * 2026.06.16: Seung-Geon: searchUsers, getAdminUserDetail, getUserStatistics, changeUserRole 엔드포인트 추가
+ * 2026.06.22: Seung-Geon: /admin/auth/sessions/active 엔드포인트 추가 (활성 세션 조회)
  * </pre>
  *
- * @author Seung-Geon
- * @version 1.2
+ *  @author Seung-Geon
+ * @version 1.3
  */
 @RestController
 @RequestMapping("/admin/auth")
@@ -55,13 +57,20 @@ public class AuthAdminController {
     private final AuthCommandService authCommandService;
     private final AuthQueryService authQueryService;
 
-    @Operation(summary = "강제 로그아웃", description = "관리자가 특정 사용자를 강제 로그아웃 처리합니다.")
+    @Operation(summary = "강제 로그아웃", description = "관리자가 특정 사용자를 강제 로그아웃 처리(refresh token 삭제)합니다.")
     @PostMapping("/force-logout/{userId}")
     public ResponseEntity<CustomResponse<Void>> forceLogout(
             @AuthenticationPrincipal CustomUserDetails adminDetails,
             @PathVariable String userId) {
         authCommandService.forceLogout(userId, adminDetails.getUsername());
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+    }
+
+    @Operation(summary = "활성 세션(로그인 중) 조회", description = "현재 로그인 중(Redis에 refresh token이 존재)인 회원 목록을 조회합니다. force-logout 전 확인 용도로 사용합니다. (ADMIN 전용)")
+    @GetMapping("/sessions/active")
+    public ResponseEntity<CustomResponse<List<ActiveSessionResponse>>> getActiveSessions() {
+        List<ActiveSessionResponse> sessions = authQueryService.getActiveSessions();
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, sessions));
     }
 
     @Operation(summary = "Role 목록 조회", description = "전체 Role 권한명 목록을 조회합니다. (MANAGER 이상 접근 가능)")
