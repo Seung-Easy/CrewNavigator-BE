@@ -25,10 +25,11 @@ import org.springframework.http.HttpStatus;
  * 2024/06/04  Seung-Geon: Class 생성 및 Javadoc 추가
  * 2024/06/12  Seung-Geon: 코드 체계 변경 (S001 중복 제거, 에러 코드 E prefix 도입)
  * 2026.06.15: Seung-Geon: EA017~EA020 이메일 인증 관련 에러 코드 추가
+ * 2026.06.22: Seung-Geon: EA013 FORCE_LOGOUT 메시지에 계정 잠김/비밀번호 재설정 안내 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.1
+ * @version 1.2
  */
 @Getter
 @RequiredArgsConstructor
@@ -188,12 +189,13 @@ public enum ResponseCode {
     UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "EA012", "인증되지 않은 접근입니다."),
 
     /**
-     * 관리자에 의해 강제 로그아웃되었습니다.
+     * 관리자에 의해 강제 로그아웃되었습니다. 계정이 잠겼습니다.
      *
-     * 상황: 관리자가 특정 계정을 강제 로그아웃 처리했을 때
+     * 상황: 관리자가 특정 계정을 강제 로그아웃 처리했을 때.
+     * 계정이 잠겼으므로 비밀번호 재설정(이메일 인증) 후에 다시 로그인할 수 있습니다.
      * HTTP 상태: 401 Unauthorized
      */
-    FORCE_LOGOUT(HttpStatus.UNAUTHORIZED, "EA013", "관리자에 의해 강제 로그아웃되었습니다."),
+    FORCE_LOGOUT(HttpStatus.UNAUTHORIZED, "EA013", "관리자에 의해 강제 로그아웃되었습니다. 계정이 잠겼습니다. 비밀번호 재설정 후 로그인해주세요."),
 
     /**
      * 아이디 또는 비밀번호가 일치하지 않습니다.
@@ -257,7 +259,15 @@ public enum ResponseCode {
      * 상황: 비밀번호 변경/재설정 시 최근 3회 이내에 사용한 비밀번호와 동일한 비밀번호로 요청할 때
      * HTTP 상태: 400 Bad Request
      */
-    RECENTLY_USED_PASSWORD(HttpStatus.BAD_REQUEST, "EA021", "최근 사용한 비밀번호로 변경할 수 없습니다.");
+    RECENTLY_USED_PASSWORD(HttpStatus.BAD_REQUEST, "EA021", "최근 사용한 비밀번호로 변경할 수 없습니다."),
+
+    /**
+     * 현재 비밀번호와 동일한 비밀번호로 변경할 수 없습니다.
+     *
+     * 상황: 비밀번호 변경/재설정 시 현재 사용 중인 비밀번호와 동일한 비밀번호로 요청할 때
+     * HTTP 상태: 400 Bad Request
+     */
+    SAME_AS_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "EA022", "현재 비밀번호와 동일한 비밀번호로 변경할 수 없습니다.");
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드

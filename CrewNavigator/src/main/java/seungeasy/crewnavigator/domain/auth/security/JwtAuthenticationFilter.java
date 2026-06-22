@@ -34,10 +34,11 @@ import java.io.IOException;
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
  * 2026.06.12: Seung-Geon: 토큰 상태별 응답 로직 추가
+ * 2026.06.22: Seung-Geon: blacklist:user:{userId} 강제 로그아웃 검증 로직 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.1
  */
 @Slf4j
 @Component
@@ -100,8 +101,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 정상 토큰 → SecurityContext에 인증 정보 설정
+        // 정상 토큰 → userId 추출
         String userId = jwtProvider.getUserIdFromToken(token);
+
+        // 사용자 기반 블랙리스트 확인 (forceLogout: blacklist:user:{userId})
+        String userBlacklistKey = "blacklist:user:" + userId;
+        if (redisService.hasKey(userBlacklistKey)) {
+            log.warn("User force logged out: {}", userId);
+            writeErrorResponse(response, ResponseCode.FORCE_LOGOUT);
+            return;
+        }
+
+        // SecurityContext에 인증 정보 설정
         CustomUserDetails userDetails = (CustomUserDetails) customUserDetailsService.loadUserByUsername(userId);
 
         UsernamePasswordAuthenticationToken authentication =
