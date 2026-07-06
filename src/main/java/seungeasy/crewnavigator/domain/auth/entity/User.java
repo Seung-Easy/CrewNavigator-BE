@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  *
  *  [주요 필드]
  *  - userId: 사용자 ID (PK)
- *  - loginFailCount, isLocked: 계정 잠금 관련 필드 (로그인 실패 횟수 추적)
+ *  - loginFailCount, isLocked: 계정 잠금 관련 필드 (로그a인 실패 횟수 추적)
  *  - status: 계정 상태 (ACTIVE / INACTIVE / LEAVE)
  *
  * History

@@ -10,26 +10,30 @@ import org.springframework.http.HttpStatus;
  * Description: API 응답 상태 코드 및 메시지 정의
  *
  * 코드 체계:
- *   - 성공: S + 일련번호 (예: S001 - OK, S002 - Created, S003 - No Content)
- *   - 에러: E + 도메인이니셜(대문자) + 일련번호 (예: EC001 - Common, EA001 - Auth)
+ * - 성공: S + 일련번호 (예: S001 - OK, S002 - Created, S003 - No Content)
+ * - 에러: E + 도메인이니셜(대문자) + 일련번호 (예: EC001 - Common, EA001 - Auth, EP001 - Post, EM001 - Comment)
  *
  * Example:
- *      // 성공 시
- *      ResponseCode.OK.getCode() // "S001"
- *      ResponseCode.OK.getMessage() // "요청이 성공적으로 처리되었습니다."
+ * // 성공 시
+ * ResponseCode.OK.getCode() // "S001"
+ * ResponseCode.OK.getMessage() // "요청이 성공적으로 처리되었습니다."
  *
- *      // 예외 발생 시 (BusinessException과 함께 사용)
- *      throw new BusinessException(ResponseCode.USER_NOT_FOUND);
+ * // 예외 발생 시 (BusinessException과 함께 사용)
+ * throw new BusinessException(ResponseCode.USER_NOT_FOUND);
  *
  * History
  * 2024/06/04  Seung-Geon: Class 생성 및 Javadoc 추가
  * 2024/06/12  Seung-Geon: 코드 체계 변경 (S001 중복 제거, 에러 코드 E prefix 도입)
  * 2026.06.15: Seung-Geon: EA017~EA020 이메일 인증 관련 에러 코드 추가
  * 2026.06.22: Seung-Geon: EA013 FORCE_LOGOUT 메시지에 계정 잠김/비밀번호 재설정 안내 추가
+ * 2026.06.27: Chi-Yoon: EP001 CATEGORY_NOT_FOUND 게시글 카테고리 누락 에러 코드 추가
+ * 2026.07.01: Chi-Yoon: EP002 NOT_POST_WRITER 게시글 수정/삭제 권한 부족 에러 코드 추가
+ * 2026.07.05: Chi-Yoon: EM001 NOT_COMMENT_WRITER 댓글 수정/삭제 권한 부족 에러 코드 추가
+ * 2026.07.05: Chi-Yoon: EM002 COMMENT_NOT_FOUND 존재하지 않는 댓글 에러 코드 추가 (💡 추가)
  * </pre>
  *
- * @author Seung-Geon
- * @version 1.2
+ * @author Seung-Geon, Chi-Yoon
+ * @version 1.6
  */
 @Getter
 @RequiredArgsConstructor
@@ -267,7 +271,43 @@ public enum ResponseCode {
      * 상황: 비밀번호 변경/재설정 시 현재 사용 중인 비밀번호와 동일한 비밀번호로 요청할 때
      * HTTP 상태: 400 Bad Request
      */
-    SAME_AS_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "EA022", "현재 비밀번호와 동일한 비밀번호로 변경할 수 없습니다.");
+    SAME_AS_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "EA022", "현재 비밀번호와 동일한 비밀번호로 요청할 때."),
+
+
+    // ------- EP: 게시글/카테고리 (Post) -------
+    /**
+     * 존재하지 않는 카테고리입니다.
+     *
+     * 상황: 게시글 작성/수정 시 request로 넘어온 categoryId에 해당하는 카테고리가 DB에 없을 때
+     * HTTP 상태: 404 Not Found
+     */
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "EP001", "존재하지 않는 카테고리입니다."),
+
+    /**
+     * 게시글 수정/삭제 권한이 없습니다.
+     *
+     * 상황: 로그인한 유저가 자신이 작성하지 않은 타인의 게시글을 수정하거나 삭제하려고 시도할 때
+     * HTTP 상태: 403 Forbidden
+     */
+    NOT_POST_WRITER(HttpStatus.FORBIDDEN, "EP002", "해당 게시글의 작성자가 아닙니다."),
+
+
+    // ------- EM: 댓글 (Comment) -------
+    /**
+     * 댓글 수정/삭제 권한이 없습니다.
+     *
+     * 상황: 로그인한 유저가 자신이 작성하지 않은 타인의 댓글을 수정하거나 삭제하려고 시도할 때
+     * HTTP 상태: 403 Forbidden
+     */
+    NOT_COMMENT_WRITER(HttpStatus.FORBIDDEN, "EM001", "해당 댓글의 작성자가 아닙니다."),
+
+    /**
+     * 존재하지 않는 댓글입니다.
+     *
+     * 상황: 댓글 수정/삭제 시 해당 ID의 댓글이 데이터베이스에 존재하지 않거나 이미 삭제되었을 때
+     * HTTP 상태: 404 Not Found
+     */
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EM002", "존재하지 않는 댓글입니다."); // 💡 추가됨
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드

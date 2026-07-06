@@ -1,4 +1,4 @@
-package seungeasy.crewnavigator.domain.ex.dto.request;
+package seungeasy.crewnavigator.domain.post.dto;
 
 /**
  * DTO는 기본 record로 만든다.
@@ -10,5 +10,5 @@ package seungeasy.crewnavigator.domain.ex.dto.request;
  *  2. JPA Entity는 무조건 class로 변경
  *      @Entity는 제약상 record 불가능
  */
-public record ExRequestDTO() {
+public record PostDTO() {
 }
