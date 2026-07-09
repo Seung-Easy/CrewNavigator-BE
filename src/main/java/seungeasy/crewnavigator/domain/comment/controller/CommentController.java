@@ -1,6 +1,7 @@
 package seungeasy.crewnavigator.domain.comment.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,8 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import seungeasy.crewnavigator.common.response.CustomResponse;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.comment.dto.request.CommentCreateRequest;
-import seungeasy.crewnavigator.domain.comment.dto.request.CommentUpdateRequest; // 💡 임포트 추가
+import seungeasy.crewnavigator.domain.comment.dto.request.CommentSearchRequest;
+import seungeasy.crewnavigator.domain.comment.dto.request.CommentUpdateRequest;
+import seungeasy.crewnavigator.domain.comment.dto.response.CommentResponse;
 import seungeasy.crewnavigator.domain.comment.service.CommentCommandService;
+import seungeasy.crewnavigator.domain.comment.service.CommentQueryService;
 
 /**
  * <pre>
@@ -22,10 +26,11 @@ import seungeasy.crewnavigator.domain.comment.service.CommentCommandService;
  * History
  * 2026.07.05: Chi-Yoon: 프로젝트 CustomResponse 및 UserDetails 규격에 맞춘 댓글 등록 API 최초 생성
  * 2026.07.05: Chi-Yoon: 댓글 수정(PUT) 및 삭제(DELETE) API 추가 확장 및 권한 방어 적용
+ * 2026.07.07: Chi-Yoon: CommentQueryService 도입 및 게시글 번호/유저 ID 다중 조건 검색 API(searchComments) 추가 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.1
+ * @version 1.2
  */
 @Slf4j
 @RestController
@@ -34,6 +39,24 @@ import seungeasy.crewnavigator.domain.comment.service.CommentCommandService;
 public class CommentController {
 
     private final CommentCommandService commentCommandService;
+    private final CommentQueryService commentQueryService; // 💡 읽기 전용 쿼리 서비스 추가 주입
+
+    /**
+     * 게시글 식별 번호 및 사용자 아이디를 기반으로 필터링된 댓글 목록을 다중 조건 검색합니다. (💡 추가)
+     * URL 구조: GET /api/v1/comments?postId=1&userId=easy123
+     */
+    @GetMapping
+    public ResponseEntity<CustomResponse<List<CommentResponse>>> searchComments(
+            @ModelAttribute CommentSearchRequest request
+    ) {
+        log.info("API Request - Search Comments Conditions: PostID={}, UserID={}",
+                request.postId(), request.userId());
+
+        List<CommentResponse> comments = commentQueryService.searchComments(request);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CustomResponse.success(ResponseCode.OK, comments));
+    }
 
     /**
      * 특정 게시글에 새로운 댓글을 등록합니다.
@@ -69,7 +92,6 @@ public class CommentController {
             @Valid @RequestBody CommentUpdateRequest request,
             @AuthenticationPrincipal UserDetails loginUser
     ) {
-        // 1. 시큐리티 인증 유저 컨텍스트 누락 방어
         if (loginUser == null) {
             log.error("Comment update failed: Unauthorized user context. Comment ID: {}", commentId);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -78,10 +100,8 @@ public class CommentController {
 
         log.info("API Request - Update Comment ID: {} by User ID: {}", commentId, loginUser.getUsername());
 
-        // 2. 서비스 레이어 호출 및 비즈니스 로직(원작자 검증 포함) 수행
         commentCommandService.updateComment(commentId, request, loginUser.getUsername());
 
-        // 3. 성공 응답 반환 (S001 OK 규격 적용)
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CustomResponse.success(ResponseCode.OK));
     }
@@ -95,7 +115,6 @@ public class CommentController {
             @PathVariable("commentId") Long commentId,
             @AuthenticationPrincipal UserDetails loginUser
     ) {
-        // 1. 시큐리티 인증 유저 컨텍스트 누락 방어
         if (loginUser == null) {
             log.error("Comment deletion failed: Unauthorized user context. Comment ID: {}", commentId);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -104,10 +123,8 @@ public class CommentController {
 
         log.info("API Request - Delete Comment ID: {} by User ID: {}", commentId, loginUser.getUsername());
 
-        // 2. 서비스 레이어 호출 및 비즈니스 로직(원작자 검증 포함) 수행
         commentCommandService.deleteComment(commentId, loginUser.getUsername());
 
-        // 3. 성공 응답 반환 (S001 OK 규격 적용)
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CustomResponse.success(ResponseCode.OK));
     }
