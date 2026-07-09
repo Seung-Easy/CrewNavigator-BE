@@ -43,7 +43,7 @@ public class CommentController {
     private final CommentQueryService commentQueryService; // 읽기 전용 쿼리 서비스 주입
 
     /**
-     * 게시글 식별 번호 및 사용자 아이디를 기반으로 필터링된 댓글 목록을 페이징하여 다중 조건 검색합니다. (💡 수정)
+     * 게시글 식별 번호 및 사용자 아이디를 기반으로 필터링된 댓글 목록을 페이징하여 다중 조건 검색합니다.
      * URL 구조: GET /api/v1/comments?postId=1&userId=easy123&page=0&size=10
      */
     @GetMapping

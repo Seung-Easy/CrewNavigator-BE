@@ -1,11 +1,18 @@
 package seungeasy.crewnavigator.domain.post.service;
 
+<<<<<<< HEAD
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+=======
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import seungeasy.crewnavigator.domain.post.dto.request.PostSearchRequest;
@@ -20,11 +27,18 @@ import seungeasy.crewnavigator.domain.post.repository.PostRepository;
  *
  * History
  * 2026.07.07: Chi-Yoon: searchPosts 동적 조회 비즈니스 로직 및 DTO 변환 스트림 파이프라인 구현
+<<<<<<< HEAD
  * 2026.07.09: Chi-Yoon: 공통 규격 벤치마킹을 위한 페이징 처리(Pageable, Page.map) 로직 구현 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
  * @version 1.1
+=======
+ * </pre>
+ *
+ * @author Chi-Yoon
+ * @version 1.0
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
  */
 @Slf4j
 @Service
@@ -35,6 +49,7 @@ public class PostQueryServiceImpl implements PostQueryService {
     private final PostRepository postRepository;
 
     /**
+<<<<<<< HEAD
      * 카테고리 ID 및 제목 키워드를 기반으로 레포지토리에서 데이터를 페이징 조회하고,
      * 응답용 DTO 객체(PostResponse)로 변환하여 반환합니다.
      */
@@ -49,5 +64,22 @@ public class PostQueryServiceImpl implements PostQueryService {
         // 2. 레포지토리를 호출하여 페이징 쿼리 수행 후, Page.map()을 통해 엔티티를 DTO로 변환하여 반환
         return postRepository.searchPosts(request.categoryId(), request.title(), pageable)
                 .map(PostResponse::from);
+=======
+     * 카테고리 ID 및 제목 키워드를 기반으로 레포지토리에서 데이터를 조회하고,
+     * 응답용 DTO 객체(PostResponse)로 변환하여 반환합니다.
+     */
+    @Override
+    public List<PostResponse> searchPosts(PostSearchRequest request) {
+        log.info("Searching posts with conditions - CategoryID: {}, Title Keyword: {}",
+                request.categoryId(), request.title());
+
+        // 1. 레포지토리를 호출하여 다중 조건 검색 수행 (List<Post> 획득)
+        return postRepository.searchPosts(request.categoryId(), request.title())
+                .stream()
+                // 2. 정적 팩토리 메서드(from)를 활용해 엔티티를 DTO로 변환
+                .map(PostResponse::from)
+                // 3. 변환된 DTO들을 최종 List 형태로 수집하여 반환
+                .collect(Collectors.toList());
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
     }
 }

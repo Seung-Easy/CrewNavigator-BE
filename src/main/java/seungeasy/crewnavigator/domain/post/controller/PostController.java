@@ -43,7 +43,7 @@ public class PostController {
     private final PostQueryService postQueryService; // 읽기 전용 쿼리 서비스 주입
 
     /**
-     * 카테고리 ID 및 제목 키워드를 기반으로 필터링된 게시글 목록을 페이징하여 다중 조건 검색합니다. (💡 수정)
+     * 카테고리 ID 및 제목 키워드를 기반으로 필터링된 게시글 목록을 페이징하여 다중 조건 검색합니다.
      * URL 구조: GET /api/v1/posts?categoryId=1&title=키워드&page=0&size=20
      */
     @GetMapping

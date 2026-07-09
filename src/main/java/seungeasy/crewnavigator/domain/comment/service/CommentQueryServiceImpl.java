@@ -1,11 +1,18 @@
 package seungeasy.crewnavigator.domain.comment.service;
 
+<<<<<<< HEAD
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+=======
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import seungeasy.crewnavigator.domain.comment.dto.request.CommentSearchRequest;
@@ -16,6 +23,7 @@ import seungeasy.crewnavigator.domain.comment.repository.CommentRepository;
  * <pre>
  * Class Name: CommentQueryServiceImpl
  * Description: 댓글(Comment) 관련 읽기/조회(Query) 작업을 처리하는 서비스 구현체.
+<<<<<<< HEAD
  * 성능 최적화를 위해 클래스 레벨에 @Transactional(readOnly = true)을 적용합니다.
  *
  * History
@@ -25,6 +33,12 @@ import seungeasy.crewnavigator.domain.comment.repository.CommentRepository;
  *
  * @author Chi-Yoon
  * @version 1.1
+=======
+ * </pre>
+ *
+ * @author Chi-Yoon
+ * @version 1.0
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
  */
 @Slf4j
 @Service
@@ -34,6 +48,7 @@ public class CommentQueryServiceImpl implements CommentQueryService {
 
     private final CommentRepository commentRepository;
 
+<<<<<<< HEAD
     /**
      * 게시글 번호 및 사용자 아이디를 기반으로 레포지토리에서 데이터를 페이징 조회하고,
      * 응답용 DTO 객체(CommentResponse)로 변환하여 반환합니다.
@@ -49,5 +64,16 @@ public class CommentQueryServiceImpl implements CommentQueryService {
         // 2. 레포지토리를 호출하여 페이징 쿼리 수행 후, Page.map()을 통해 엔티티를 DTO로 변환하여 반환
         return commentRepository.searchComments(request.postId(), request.userId(), pageable)
                 .map(CommentResponse::from);
+=======
+    @Override
+    public List<CommentResponse> searchComments(CommentSearchRequest request) {
+        log.info("Searching comments with conditions - PostID: {}, UserID: {}",
+                request.postId(), request.userId());
+
+        return commentRepository.searchComments(request.postId(), request.userId())
+                .stream()
+                .map(CommentResponse::from)
+                .collect(Collectors.toList());
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
     }
 }

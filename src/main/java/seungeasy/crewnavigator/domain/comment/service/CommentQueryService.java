@@ -1,6 +1,10 @@
 package seungeasy.crewnavigator.domain.comment.service;
 
+<<<<<<< HEAD
 import org.springframework.data.domain.Page;
+=======
+import java.util.List;
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
 import seungeasy.crewnavigator.domain.comment.dto.request.CommentSearchRequest;
 import seungeasy.crewnavigator.domain.comment.dto.response.CommentResponse;
 
@@ -11,6 +15,7 @@ import seungeasy.crewnavigator.domain.comment.dto.response.CommentResponse;
  *
  * History
  * 2026.07.07: Chi-Yoon: 댓글 다중 조건 검색을 위한 조회 메서드(searchComments) 정의
+<<<<<<< HEAD
  * 2026.07.09: Chi-Yoon: 공통 규격 벤치마킹을 위한 페이징 처리(Page 반환 및 page/size 파라미터) 반영 (💡 추가)
  * </pre>
  *
@@ -28,4 +33,13 @@ public interface CommentQueryService {
      * @return 검색 조건에 부합하고 페이징 처리가 완료된 댓글 응답 DTO 묶음 (Page)
      */
     Page<CommentResponse> searchComments(CommentSearchRequest request, int page, int size);
+=======
+ * </pre>
+ *
+ * @author Chi-Yoon
+ * @version 1.0
+ */
+public interface CommentQueryService {
+    List<CommentResponse> searchComments(CommentSearchRequest request);
+>>>>>>> 4fcc35de4764cbdb3747f46c6a2d5bb3bbf4a70b
 }
