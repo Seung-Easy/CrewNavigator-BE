@@ -1,6 +1,7 @@
 package seungeasy.crewnavigator.domain.post.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,8 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import seungeasy.crewnavigator.common.response.CustomResponse;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.post.dto.request.PostCreateRequest;
-import seungeasy.crewnavigator.domain.post.dto.request.PostUpdateRequest; // 추가된 DTO 임포트
+import seungeasy.crewnavigator.domain.post.dto.request.PostSearchRequest;
+import seungeasy.crewnavigator.domain.post.dto.request.PostUpdateRequest;
+import seungeasy.crewnavigator.domain.post.dto.response.PostResponse;
 import seungeasy.crewnavigator.domain.post.service.PostCommandService;
+import seungeasy.crewnavigator.domain.post.service.PostQueryService;
 
 /**
  * <pre>
@@ -21,11 +25,12 @@ import seungeasy.crewnavigator.domain.post.service.PostCommandService;
  *
  * History
  * 2026.06.27: Chi-Yoon: NullPointerException 해결을 위한 @AuthenticationPrincipal 타입 수정
- * 2026.07.01: Chi-Yoon: 프로젝트 CustomResponse 및 UserDetails 규격에 맞춘 게시글 수정/삭제 API 추가 (수정)
+ * 2026.07.01: Chi-Yoon: 프로젝트 CustomResponse 및 UserDetails 규격에 맞춘 게시글 수정/삭제 API 추가
+ * 2026.07.07: Chi-Yoon: PostQueryService 도입 및 카테고리/제목 다중 조건 검색 API(searchPosts) 추가 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.3
+ * @version 1.4
  */
 @Slf4j
 @RestController
@@ -34,6 +39,24 @@ import seungeasy.crewnavigator.domain.post.service.PostCommandService;
 public class PostController {
 
     private final PostCommandService postCommandService;
+    private final PostQueryService postQueryService; // 💡 읽기 전용 쿼리 서비스 추가 주입
+
+    /**
+     * 카테고리 ID 및 제목 키워드를 기반으로 필터링된 게시글 목록을 다중 조건 검색합니다.
+     * URL 구조: GET /api/v1/posts?categoryId=1&title=키워드
+     */
+    @GetMapping
+    public ResponseEntity<CustomResponse<List<PostResponse>>> searchPosts(
+            @ModelAttribute PostSearchRequest request
+    ) {
+        log.info("API Request - Search Posts Conditions: CategoryID={}, Title={}",
+                request.categoryId(), request.title());
+
+        List<PostResponse> posts = postQueryService.searchPosts(request);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CustomResponse.success(ResponseCode.OK, posts));
+    }
 
     /**
      * 새로운 게시글을 등록합니다.
@@ -58,7 +81,7 @@ public class PostController {
     }
 
     /**
-     * 기존 게시글을 수정합니다. (💡 추가)
+     * 기존 게시글을 수정합니다.
      * URL 구조: PUT /api/v1/posts/{postId}
      */
     @PutMapping("/{postId}")
@@ -67,7 +90,6 @@ public class PostController {
             @Valid @RequestBody PostUpdateRequest request,
             @AuthenticationPrincipal UserDetails loginUser
     ) {
-        // 인증 유저 방어 코드
         if (loginUser == null) {
             log.error("Post update failed: Unauthorized user context. Post ID: {}", postId);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -76,7 +98,6 @@ public class PostController {
 
         log.info("API Request - Update Post ID: {} by User ID: {}", postId, loginUser.getUsername());
 
-        // 서비스 레이어 호출 (내부에서 작성자 일치 여부 EP002 검증 진행)
         postCommandService.updatePost(postId, request, loginUser.getUsername());
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -84,7 +105,7 @@ public class PostController {
     }
 
     /**
-     * 기존 게시글을 삭제(소프트 딜리트)합니다. (💡 추가)
+     * 기존 게시글을 삭제(소프트 딜리트)합니다.
      * URL 구조: DELETE /api/v1/posts/{postId}
      */
     @DeleteMapping("/{postId}")
@@ -92,7 +113,6 @@ public class PostController {
             @PathVariable("postId") Long postId,
             @AuthenticationPrincipal UserDetails loginUser
     ) {
-        // 인증 유저 방어 코드
         if (loginUser == null) {
             log.error("Post deletion failed: Unauthorized user context. Post ID: {}", postId);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -101,7 +121,6 @@ public class PostController {
 
         log.info("API Request - Delete Post ID: {} by User ID: {}", postId, loginUser.getUsername());
 
-        // 서비스 레이어 호출 (내부에서 작성자 일치 여부 EP002 검증 진행)
         postCommandService.deletePost(postId, loginUser.getUsername());
 
         return ResponseEntity.status(HttpStatus.OK)
