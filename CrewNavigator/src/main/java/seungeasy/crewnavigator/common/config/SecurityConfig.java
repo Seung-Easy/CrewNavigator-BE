@@ -140,8 +140,6 @@ public class SecurityConfig {
                                 "/auth/account/reactivate",
                                 "/auth/health").permitAll()
 
-
-
                         // 관리자 API (RoleHierarchy + @PreAuthorize로 세부 제어)
                         .requestMatchers("/admin/**").authenticated()
 
