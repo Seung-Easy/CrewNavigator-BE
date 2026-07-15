@@ -11,12 +11,6 @@
         WHERE name = #{name} AND email = #{email}
     </select>
 
-    <!-- ========== getUserInfo ========== -->
-    <select id="getUserInfo" resultType="AdminUserRow">
-        SELECT user_id, name, email, phone, user_image
-        FROM `user`
-        WHERE user_id = #{userId}
-    </select>
 
     <!-- ========== countUsers (페이징용) ========== -->
     <select id="countUsers" resultType="long">

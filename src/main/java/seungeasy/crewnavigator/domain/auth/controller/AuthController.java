@@ -15,7 +15,7 @@ import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.auth.dto.request.*;
 import seungeasy.crewnavigator.domain.auth.dto.response.LoginHistoryResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.TokenResponse;
-import seungeasy.crewnavigator.domain.auth.dto.response.UserInfoResponse;
+import seungeasy.crewnavigator.domain.user.dto.response.UserInfoResponse;
 import seungeasy.crewnavigator.domain.auth.security.CustomUserDetails;
 import org.springframework.data.domain.Page;
 import seungeasy.crewnavigator.domain.auth.service.AuthCommandService;
@@ -186,11 +186,11 @@ public class AuthController {
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, userIds));
     }
 
-    @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
-    @GetMapping("/me")
-    public ResponseEntity<CustomResponse<UserInfoResponse>> getMyInfo(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        UserInfoResponse response = authQueryService.getUserInfo(userDetails.getUsername());
-        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, response));
-    }
+//    @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
+//    @GetMapping("/me")
+//    public ResponseEntity<CustomResponse<UserInfoResponse>> getMyInfo(
+//            @AuthenticationPrincipal CustomUserDetails userDetails) {
+//        UserInfoResponse response = authQueryService.getUserInfo(userDetails.getUsername());
+//        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, response));
+//    }
 }

@@ -14,7 +14,7 @@ import seungeasy.crewnavigator.domain.auth.dto.request.FindIdRequest;
 import seungeasy.crewnavigator.domain.auth.dto.response.AdminUserResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.ActiveSessionResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.LoginHistoryResponse;
-import seungeasy.crewnavigator.domain.auth.dto.response.UserInfoResponse;
+import seungeasy.crewnavigator.domain.user.dto.response.UserInfoResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserStatisticsResponse;
 import seungeasy.crewnavigator.domain.auth.dto.row.AdminUserRow;
 import seungeasy.crewnavigator.domain.auth.dto.row.RoleCountRow;
@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
  * 2026.06.16: Seung-Geon: getAllRoleNames 구현 (Role 목록 조회)
  * 2026.06.16: Seung-Geon: JPA @Query → MyBatis 마이그레이션 (CQRS: Query는 MyBatis로 전환)
  * 2026.06.22: Seung-Geon: getMyLoginHistory 메서드 구현 (내 로그인 이력 페이지네이션)
+ * 2026.06.22: Seung-Geon: getUserInfo 메서드 도메인 변경(auth -> user)
  * </pre>
  *
  * @author Seung-Geon
@@ -86,26 +87,6 @@ public class AuthQueryServiceImpl implements AuthQueryService {
         }
 
         return List.of(userId);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public UserInfoResponse getUserInfo(String userId) {
-        AdminUserRow row = authQueryMapper.getUserInfo(userId);
-        if (row == null) {
-            throw new BusinessException(ResponseCode.USER_NOT_FOUND);
-        }
-
-        return new UserInfoResponse(
-                row.getUserId(),
-                row.getName(),
-                row.getEmail(),
-                row.getPhone(),
-                row.getUserImage()
-        );
     }
 
     /**
