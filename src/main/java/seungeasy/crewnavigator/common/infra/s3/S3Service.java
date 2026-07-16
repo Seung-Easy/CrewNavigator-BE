@@ -24,6 +24,7 @@ import java.util.UUID;
  * History
  * 2026.07.15: Seung-Geon: 이전 프로젝트를 참고해 작성
  *                          예외처리에 넣을 ResponseCode를 추가하고, 그에 맞게 변경 필요
+ * 2026.07.16: Seung-Geon: validateImageFile - 이미지 파일(jpg/jpeg/png/gif/webp)만 허용하도록 변경
  * </pre>
  *
  * @author 혜원
@@ -130,10 +131,10 @@ public class S3Service {
     }
 
     /**
-     * 파일 검증
+     * 파일 검증 (이미지 파일만 허용)
      */
     private void validateImageFile(String extension) {
-        if (!extension.matches("jpg|jpeg|png|pdf|hwp|doc|docx")) {
+        if (!extension.matches("jpg|jpeg|png|gif|webp")) {
             throw new BusinessException(ResponseCode.INVALID_VERIFICATION_CODE);
         }
     }

@@ -8,7 +8,7 @@ import java.time.LocalDate;
  * <pre>
  *  Class Name: UserInfoChangeRequest
  *  Description: 사용자 정보 변경 요청 DTO.
- *  내 정보 변경(/user/me PUT) 시 전달되는 요청 본문입니다.
+ *  내 정보 변경(/user/profile PUT) 시 전달되는 요청 본문입니다.
  *
  *  @param name     변경할 이름 (nullable)
  *  @param birthday 변경할 생일 (nullable)

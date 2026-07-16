@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import seungeasy.crewnavigator.common.exception.BusinessException;
+import seungeasy.crewnavigator.common.infra.s3.S3Service;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.user.dto.UserInfoRow;
 import seungeasy.crewnavigator.domain.user.dto.response.UserInfoResponse;
@@ -29,6 +30,7 @@ import seungeasy.crewnavigator.domain.user.mapper.UserQueryMapper;
 public class UserQueryServiceImpl implements UserQueryService{
 
     private final UserQueryMapper userQueryMapper;
+    private final S3Service s3Service;
 
     /**
      * {@inheritDoc}
@@ -46,7 +48,7 @@ public class UserQueryServiceImpl implements UserQueryService{
                 row.name(),
                 row.email(),
                 row.phone(),
-                row.userImage(),
+                s3Service.generatePresignedUrl(row.userImage()),
                 row.createdAt()
         );
     }

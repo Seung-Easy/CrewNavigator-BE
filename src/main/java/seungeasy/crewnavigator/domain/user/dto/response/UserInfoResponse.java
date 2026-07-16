@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
  * <pre>
  *  Class Name: UserInfoResponse
  *  Description: 사용자 정보 조회 응답 DTO.
- *  내 정보 조회(/user/me) 시 반환되는 사용자 프로필 정보입니다.
+ *  내 정보 조회(/user/profile) 시 반환되는 사용자 프로필 정보입니다.
  *
  *  @param userId    사용자 ID
  *  @param name      사용자 이름
