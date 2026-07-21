@@ -11,11 +11,12 @@ import seungeasy.crewnavigator.domain.post.dto.response.PostResponse;
  *
  * History
  * 2026.07.07: Chi-Yoon: 게시글 다중 조건 검색을 위한 조회 메서드(searchPosts) 정의
- * 2026.07.09: Chi-Yoon: 공통 규격 벤치마킹을 위한 페이징 처리(Page 반환 및 page/size 파라미터) 반영 (💡 추가)
+ * 2026.07.09: Chi-Yoon: 공통 규격 벤치마킹을 위한 페이징 처리(Page 반환 및 page/size 파라미터) 반영
+ * 2026.07.21: Chi-Yoon: 게시글 단건 상세 조회를 위한 메서드(getPost) 정의 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.1
+ * @version 1.2
  */
 public interface PostQueryService {
 
@@ -28,4 +29,12 @@ public interface PostQueryService {
      * @return 검색 조건에 부합하고 페이징 처리가 완료된 게시글 응답 DTO 묶음 (Page)
      */
     Page<PostResponse> searchPosts(PostSearchRequest request, int page, int size);
+
+    /**
+     * 특정 게시글 식별 번호(ID)를 기반으로 단건 상세 정보를 조회합니다.
+     *
+     * @param postId 조회할 게시글 식별 번호
+     * @return 게시글 상세 정보를 담은 응답 DTO
+     */
+    PostResponse getPost(Long postId);
 }

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import seungeasy.crewnavigator.domain.post.entity.Post;
 import seungeasy.crewnavigator.domain.post.dto.request.PostSearchRequest;
 import seungeasy.crewnavigator.domain.post.dto.response.PostResponse;
 import seungeasy.crewnavigator.domain.post.repository.PostRepository;
@@ -20,11 +21,12 @@ import seungeasy.crewnavigator.domain.post.repository.PostRepository;
  *
  * History
  * 2026.07.07: Chi-Yoon: searchPosts 동적 조회 비즈니스 로직 및 DTO 변환 스트림 파이프라인 구현
- * 2026.07.09: Chi-Yoon: 공통 규격 벤치마킹을 위한 페이징 처리(Pageable, Page.map) 로직 구현 (💡 추가)
+ * 2026.07.09: Chi-Yoon: 공통 규격 벤치마킹을 위한 페이징 처리(Pageable, Page.map) 로직 구현
+ * 2026.07.21: Chi-Yoon: 단건 게시글 상세 조회(getPost) 비즈니스 로직 구현 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.1
+ * @version 1.2
  */
 @Slf4j
 @Service
@@ -49,5 +51,22 @@ public class PostQueryServiceImpl implements PostQueryService {
         // 2. 레포지토리를 호출하여 페이징 쿼리 수행 후, Page.map()을 통해 엔티티를 DTO로 변환하여 반환
         return postRepository.searchPosts(request.categoryId(), request.title(), pageable)
                 .map(PostResponse::from);
+    }
+
+    /**
+     * 특정 게시글 식별 번호(ID)를 기반으로 단건 상세 정보를 조회합니다.
+     *
+     * @param postId 조회할 게시글 식별 번호
+     * @return 게시글 상세 정보를 담은 응답 DTO
+     * @throws IllegalArgumentException 대상 게시글이 존재하지 않을 경우 발생
+     */
+    @Override
+    public PostResponse getPost(Long postId) {
+        log.info("Fetching post detail - PostID: {}", postId);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다. ID: " + postId));
+
+        return PostResponse.from(post);
     }
 }

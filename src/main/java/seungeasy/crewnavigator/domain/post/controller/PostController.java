@@ -27,11 +27,12 @@ import seungeasy.crewnavigator.domain.post.service.PostQueryService;
  * 2026.06.27: Chi-Yoon: NullPointerException 해결을 위한 @AuthenticationPrincipal 타입 수정
  * 2026.07.01: Chi-Yoon: 프로젝트 CustomResponse 및 UserDetails 규격에 맞춘 게시글 수정/삭제 API 추가
  * 2026.07.07: Chi-Yoon: PostQueryService 도입 및 카테고리/제목 다중 조건 검색 API(searchPosts) 추가
- * 2026.07.09: Chi-Yoon: 공통 관리자 API 규격을 벤치마킹하여 게시글 다중 조회에 페이징 처리(Page) 도입 (💡 추가)
+ * 2026.07.09: Chi-Yoon: 공통 관리자 API 규격을 벤치마킹하여 게시글 다중 조회에 페이징 처리(Page) 도입
+ * 2026.07.21: Chi-Yoon: 게시글 단건 상세 조회 API(getPost) 추가 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.5
+ * @version 1.6
  */
 @Slf4j
 @RestController
@@ -59,6 +60,25 @@ public class PostController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CustomResponse.success(ResponseCode.OK, posts));
+    }
+
+    /**
+     * 특정 게시글 식별 번호(ID)를 기반으로 게시글 상세 정보를 단건 조회합니다.
+     * URL 구조: GET /api/v1/posts/{postId}
+     *
+     * @param postId 조회할 게시글 식별 번호
+     * @return 게시글 상세 정보 응답 객체
+     */
+    @GetMapping("/{postId}")
+    public ResponseEntity<CustomResponse<PostResponse>> getPost(
+            @PathVariable("postId") Long postId
+    ) {
+        log.info("API Request - Get Post Detail ID: {}", postId);
+
+        PostResponse post = postQueryService.getPost(postId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CustomResponse.success(ResponseCode.OK, post));
     }
 
     /**

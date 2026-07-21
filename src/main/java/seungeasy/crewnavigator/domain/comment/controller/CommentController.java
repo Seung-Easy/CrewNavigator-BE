@@ -27,11 +27,12 @@ import seungeasy.crewnavigator.domain.comment.service.CommentQueryService;
  * 2026.07.05: Chi-Yoon: 프로젝트 CustomResponse 및 UserDetails 규격에 맞춘 댓글 등록 API 최초 생성
  * 2026.07.05: Chi-Yoon: 댓글 수정(PUT) 및 삭제(DELETE) API 추가 확장 및 권한 방어 적용
  * 2026.07.07: Chi-Yoon: CommentQueryService 도입 및 게시글 번호/유저 ID 다중 조건 검색 API(searchComments) 추가
- * 2026.07.09: Chi-Yoon: 공통 관리자 API 규격을 벤치마킹하여 댓글 다중 조회에 페이징 처리(Page) 도입 (💡 추가)
+ * 2026.07.09: Chi-Yoon: 공통 관리자 API 규격을 벤치마킹하여 댓글 다중 조회에 페이징 처리(Page) 도입
+ * 2026.07.21: Chi-Yoon: 댓글 단건 상세 조회 API(getComment) 추가 (💡 추가)
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.3
+ * @version 1.4
  */
 @Slf4j
 @RestController
@@ -59,6 +60,25 @@ public class CommentController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CustomResponse.success(ResponseCode.OK, comments));
+    }
+
+    /**
+     * 특정 댓글 식별 번호(ID)를 기반으로 댓글 상세 정보를 단건 조회합니다.
+     * URL 구조: GET /api/v1/comments/{commentId}
+     *
+     * @param commentId 조회할 댓글 식별 번호
+     * @return 댓글 상세 정보 응답 객체
+     */
+    @GetMapping("/{commentId}")
+    public ResponseEntity<CustomResponse<CommentResponse>> getComment(
+            @PathVariable("commentId") Long commentId
+    ) {
+        log.info("API Request - Get Comment Detail ID: {}", commentId);
+
+        CommentResponse comment = commentQueryService.getComment(commentId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CustomResponse.success(ResponseCode.OK, comment));
     }
 
     /**
