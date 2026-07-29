@@ -3,7 +3,7 @@ package seungeasy.crewnavigator.domain.auth.service;
 import org.springframework.data.domain.Page;
 import seungeasy.crewnavigator.domain.auth.dto.request.FindIdRequest;
 import seungeasy.crewnavigator.domain.auth.dto.response.AdminUserResponse;
-import seungeasy.crewnavigator.domain.auth.dto.response.UserInfoResponse;
+import seungeasy.crewnavigator.domain.user.dto.response.UserInfoResponse;
 import seungeasy.crewnavigator.domain.auth.dto.response.UserStatisticsResponse;
 import seungeasy.crewnavigator.domain.auth.type.UserStatus;
 
@@ -26,6 +26,8 @@ import seungeasy.crewnavigator.domain.auth.dto.response.LoginHistoryResponse;
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 인터페이스 생성
  * 2026.06.16: Seung-Geon: searchUsers, getAdminUserDetail, getUserStatistics 메서드 추가
  * 2026.06.22: Seung-Geon: getMyLoginHistory, getActiveSessions 메서드 추가
+ * 2026.06.22: Seung-Geon: getUserInfo 메서드 도메인 변경(auth -> user)
+ *
  * </pre>
  *
  * @author Seung-Geon
@@ -49,7 +51,7 @@ public interface AuthQueryService {
      * @return 사용자 정보 (UserInfoResponse)
      * @throws seungeasy.crewnavigator.common.exception.BusinessException 사용자를 찾을 수 없을 시
      */
-    UserInfoResponse getUserInfo(String userId);
+    // UserInfoResponse getUserInfo(String userId);
 
     /**
      * 관리자용 회원 목록을 검색합니다. (페이징 + 상태/키워드 필터)

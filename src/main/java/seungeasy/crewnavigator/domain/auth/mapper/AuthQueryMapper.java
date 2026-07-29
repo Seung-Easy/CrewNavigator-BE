@@ -28,9 +28,6 @@ public interface AuthQueryMapper {
     /** 이름과 이메일로 가입된 사용자 ID를 조회합니다. */
     String findUserId(@Param("name") String name, @Param("email") String email);
 
-    /** 사용자 ID로 사용자 정보를 조회합니다. */
-    AdminUserRow getUserInfo(@Param("userId") String userId);
-
     // ========== 회원 목록 검색 (페이징) ==========
 
     /** 검색 조건에 맞는 전체 회원 수를 조회합니다. */
