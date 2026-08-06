@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="seungeasy.crewnavigator.domain.group.mapper.GroupQueryMapper">
+
+    <!-- 그룹 조회 공통 컬럼 (멤버 수 서브쿼리, 태그 GROUP_CONCAT 포함) -->
+    <sql id="groupColumns">
+        g.group_id, g.leader_id, g.group_name, g.max_members, g.description,
+        g.is_private, g.is_deleted, g.group_image, g.created_at, g.updated_at,
+        (SELECT COUNT(*) FROM group_member m
+          WHERE m.group_id = g.group_id AND m.join_status = 'APPROVED') AS member_count,
+        (SELECT GROUP_CONCAT(t.tag_name ORDER BY t.tag_id SEPARATOR ',')
+          FROM group_tag gt
+          JOIN tag t ON t.tag_id = gt.tag_id
+          WHERE gt.group_id = g.group_id) AS tags
+    </sql>
+
+    <!-- ========== getGroup ========== -->
+    <select id="getGroup" resultType="GroupRow">
+        SELECT <include refid="groupColumns"/>
+        FROM crew_group g
+        WHERE g.group_id = #{groupId}
+          AND g.is_deleted = 'N'
+    </select>
+
+    <!-- ========== getMyGroups (APPROVED) ========== -->
+    <select id="getMyGroups" resultType="GroupRow">
+        SELECT <include refid="groupColumns"/>
+        FROM crew_group g
+        JOIN group_member gm ON gm.group_id = g.group_id
+        WHERE gm.user_id = #{userId}
+          AND gm.join_status = 'APPROVED'
+          AND g.is_deleted = 'N'
+        ORDER BY g.created_at DESC
+    </select>
+
+    <!-- ========== getMyAppliedGroups (PENDING) ========== -->
+    <select id="getMyAppliedGroups" resultType="GroupRow">
+        SELECT <include refid="groupColumns"/>
+        FROM crew_group g
+        JOIN group_member gm ON gm.group_id = g.group_id
+        WHERE gm.user_id = #{userId}
+          AND gm.join_status = 'PENDING'
+          AND g.is_deleted = 'N'
+        ORDER BY g.created_at DESC
+    </select>
+
+    <!-- ========== searchGroups (공개 그룹만) ========== -->
+    <select id="searchGroups" resultType="GroupRow">
+        SELECT <include refid="groupColumns"/>
+        FROM crew_group g
+        WHERE g.is_deleted = 'N'
+          AND g.is_private = 'N'
+          AND g.group_name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY g.created_at DESC
+    </select>
+
+    <!-- ========== getApplicants (PENDING) ========== -->
+    <select id="getApplicants" resultType="ApplicantRow">
+        SELECT gm.group_member_id, gm.user_id, u.name, gm.applied_at
+        FROM group_member gm
+        JOIN `user` u ON u.user_id = gm.user_id
+        WHERE gm.group_id = #{groupId}
+          AND gm.join_status = 'PENDING'
+        ORDER BY gm.applied_at
+    </select>
+
+    <!-- ========== getApprovedMembers ========== -->
+    <select id="getApprovedMembers" resultType="MemberRow">
+        SELECT gm.user_id, u.name, u.user_image, gm.member_role,
+               gm.processed_at AS joined_at
+        FROM group_member gm
+        JOIN `user` u ON u.user_id = gm.user_id
+        WHERE gm.group_id = #{groupId}
+          AND gm.join_status = 'APPROVED'
+        ORDER BY gm.member_role, gm.processed_at
+    </select>
+
+    <!-- ========== isApprovedMember ========== -->
+    <select id="isApprovedMember" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM group_member
+            WHERE group_id = #{groupId}
+              AND user_id = #{userId}
+              AND join_status = 'APPROVED'
+        )
+    </select>
+
+</mapper>

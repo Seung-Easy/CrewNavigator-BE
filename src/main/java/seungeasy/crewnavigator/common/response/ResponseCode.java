@@ -307,7 +307,108 @@ public enum ResponseCode {
      * 상황: 댓글 수정/삭제 시 해당 ID의 댓글이 데이터베이스에 존재하지 않거나 이미 삭제되었을 때
      * HTTP 상태: 404 Not Found
      */
-    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EM002", "존재하지 않는 댓글입니다."); // 💡 추가됨
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "EM002", "존재하지 않는 댓글입니다."), // 💡 추가됨
+
+
+    // ------- EG: 그룹 (Group) -------
+    /**
+     * 존재하지 않는 그룹입니다.
+     *
+     * 상황: 그룹 조회/수정/삭제 시 해당 ID의 그룹이 없거나 소프트 삭제(is_deleted='Y')된 경우
+     * HTTP 상태: 404 Not Found
+     */
+    GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "EG001", "존재하지 않는 그룹입니다."),
+
+    /**
+     * 존재하지 않는 그룹 멤버입니다.
+     *
+     * 상황: 그룹 멤버 매핑(GroupMember)이 존재하지 않을 때
+     * HTTP 상태: 404 Not Found
+     */
+    GROUP_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "EG002", "존재하지 않는 그룹 멤버입니다."),
+
+    /**
+     * 그룹장 권한이 필요합니다.
+     *
+     * 상황: 그룹장만 수행할 수 있는 작업(승인/거절/추방/수정/삭제 등)을 일반 멤버가 요청할 때
+     * HTTP 상태: 403 Forbidden
+     */
+    NOT_GROUP_LEADER(HttpStatus.FORBIDDEN, "EG003", "그룹장만 수행할 수 있는 작업입니다."),
+
+    /**
+     * 그룹 멤버가 아닙니다.
+     *
+     * 상황: 그룹원 전용 기능(멤버 목록 보기 등)을 그룹에 가입하지 않은 사용자가 요청할 때
+     * HTTP 상태: 403 Forbidden
+     */
+    NOT_GROUP_MEMBER(HttpStatus.FORBIDDEN, "EG004", "그룹 멤버가 아닙니다."),
+
+    /**
+     * 이미 가입한 그룹입니다.
+     *
+     * 상황: 이미 APPROVED 상태인 그룹에 다시 가입 신청/초대를 시도할 때
+     * HTTP 상태: 409 Conflict
+     */
+    ALREADY_GROUP_MEMBER(HttpStatus.CONFLICT, "EG005", "이미 가입한 그룹입니다."),
+
+    /**
+     * 이미 가입 신청을 한 그룹입니다.
+     *
+     * 상황: PENDING 상태인 그룹에 중복으로 가입 신청을 시도할 때
+     * HTTP 상태: 409 Conflict
+     */
+    ALREADY_GROUP_APPLIED(HttpStatus.CONFLICT, "EG006", "이미 가입 신청을 한 그룹입니다."),
+
+    /**
+     * 그룹 정원이 가득 찼습니다.
+     *
+     * 상황: 그룹 정원(max_members)을 초과하여 멤버를 승인/수락할 수 없을 때
+     * HTTP 상태: 409 Conflict
+     */
+    GROUP_IS_FULL(HttpStatus.CONFLICT, "EG007", "그룹 정원이 가득 찼습니다."),
+
+    /**
+     * 그룹장은 그룹을 나갈 수 없습니다.
+     *
+     * 상황: 그룹장(LEADER)이 그룹 나가기/탈퇴를 시도할 때.
+     * 다른 멤버에게 그룹장을 위임한 후 나갈 수 있습니다.
+     * HTTP 상태: 400 Bad Request
+     */
+    GROUP_LEADER_CANNOT_LEAVE(HttpStatus.BAD_REQUEST, "EG008", "그룹장은 그룹을 나갈 수 없습니다. 다른 멤버에게 그룹장을 위임한 후 나가주세요."),
+
+    /**
+     * 존재하지 않는 초대입니다.
+     *
+     * 상황: 초대 응답 시 초대(INVITED 상태의 GroupMember)가 없거나, 초대받은 본인이 아닐 때 (정보 노출 방지)
+     * HTTP 상태: 404 Not Found
+     */
+    INVITATION_NOT_FOUND(HttpStatus.NOT_FOUND, "EG009", "존재하지 않는 초대입니다."),
+
+    /**
+     * 자기 자신을 초대할 수 없습니다.
+     *
+     * 상황: 그룹장이 본인을 그룹에 초대하려고 할 때
+     * HTTP 상태: 400 Bad Request
+     */
+    CANNOT_INVITE_SELF(HttpStatus.BAD_REQUEST, "EG010", "자기 자신을 초대할 수 없습니다."),
+
+    /**
+     * 그룹장을 강등하거나 제거할 수 없습니다.
+     *
+     * 상황: 그룹장(LEADER)을 MEMBER로 강등하거나 추방하려고 할 때.
+     * 그룹장 변경은 다른 멤버를 LEADER로 승격(위임)하는 방식으로만 가능합니다.
+     * HTTP 상태: 400 Bad Request
+     */
+    GROUP_LEADER_CANNOT_DEMOTE(HttpStatus.BAD_REQUEST, "EG011", "그룹장을 강등하거나 제거할 수 없습니다. 다른 멤버에게 그룹장을 위임해주세요."),
+
+    /**
+     * 현재 가입 상태에서는 처리할 수 없는 요청입니다.
+     *
+     * 상황: 승인 대기(PENDING)가 아닌 신청을 승인/거절/취소하려 하거나,
+     * 초대 대기(INVITED)가 아닌 상태에서 초대에 응답하려고 할 때
+     * HTTP 상태: 400 Bad Request
+     */
+    INVALID_JOIN_STATUS(HttpStatus.BAD_REQUEST, "EG012", "현재 가입 상태에서는 처리할 수 없는 요청입니다.");
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드
