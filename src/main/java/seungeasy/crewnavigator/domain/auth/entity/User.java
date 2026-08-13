@@ -17,11 +17,13 @@ import java.time.LocalDateTime;
  *
  *  [주요 필드]
  *  - userId: 사용자 ID (PK)
- *  - loginFailCount, isLocked: 계정 잠금 관련 필드 (로그a인 실패 횟수 추적)
+ *  - gender: 성별 (M/F/N, 기본값 N)
+ *  - loginFailCount, isLocked: 계정 잠금 관련 필드 (로그인 실패 횟수 추적)
  *  - status: 계정 상태 (ACTIVE / INACTIVE / LEAVE)
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * 2026.08.13: Seung-Geon: 성별(gender) 속성 추가
  * </pre>
  *
  * @author Seung-Geon
@@ -43,6 +45,9 @@ public class User {
 
     @Column(name = "name", length = 50, nullable = false)
     private String name;
+
+    @Column(name = "gender", nullable = false)
+    private String gender;
 
     @Column(name = "birthday")
     private LocalDate birthday;
@@ -92,6 +97,9 @@ public class User {
         }
         if (this.status == null) {
             this.status = UserStatus.ACTIVE;
+        }
+        if (this.gender == null) {
+            this.gender = "N";
         }
     }
 

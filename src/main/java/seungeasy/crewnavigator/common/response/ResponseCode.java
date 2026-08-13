@@ -408,7 +408,17 @@ public enum ResponseCode {
      * 초대 대기(INVITED)가 아닌 상태에서 초대에 응답하려고 할 때
      * HTTP 상태: 400 Bad Request
      */
-    INVALID_JOIN_STATUS(HttpStatus.BAD_REQUEST, "EG012", "현재 가입 상태에서는 처리할 수 없는 요청입니다.");
+    INVALID_JOIN_STATUS(HttpStatus.BAD_REQUEST, "EG012", "현재 가입 상태에서는 처리할 수 없는 요청입니다."),
+
+    // ------- EU: 사용자 (User) -------
+    /**
+     * 성별을 변경할 수 없습니다.
+     *
+     * 상황: 성별이 이미 설정된(N이 아닌) 사용자가 성별을 다른 값으로 변경하려고 할 때.
+     * 성별은 N(선택 안 함) 상태에서만 M/F로 변경할 수 있으며, 한 번 설정하면 변경할 수 없습니다.
+     * HTTP 상태: 400 Bad Request
+     */
+    GENDER_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "EU001", "성별은 이미 설정되어 변경할 수 없습니다.");
 
     private final HttpStatus httpStatus; // HTTP 상태 코드
     private final String code;           // 비즈니스 커스텀 코드

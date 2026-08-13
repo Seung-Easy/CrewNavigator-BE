@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
  *  @param name      사용자 이름
  *  @param email     이메일 주소
  *  @param phone     연락처
+ *  @param gender    성별 (M/F/N)
  *  @param status    계정 상태 (ACTIVE / INACTIVE / LEAVE)
  *  @param isLocked  계정 잠금 여부 (Y/N)
  *  @param userImage 프로필 이미지 URL
@@ -30,6 +31,7 @@ public record UserInfoRow(
         String name,
         String email,
         String phone,
+        String gender,
         String status,
         String isLocked,
         String userImage,

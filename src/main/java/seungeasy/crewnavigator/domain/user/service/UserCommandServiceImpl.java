@@ -12,17 +12,20 @@ import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.user.dto.request.UserInfoChangeRequest;
 import seungeasy.crewnavigator.domain.user.entity.UserInfo;
 import seungeasy.crewnavigator.domain.user.repository.UserInfoRepository;
+import seungeasy.crewnavigator.domain.user.type.GenderType;
 
 
 /**
  * <pre>
  *  Class Name: UserCommandServiceImpl
  *  Description: 사용자 정보 변경(쓰기) 비즈니스 로직 구현체.
- *  프로필 수정(이름, 생일, 주소, 전화번호, 이미지)을 처리합니다.
+ *  프로필 수정(이름, 생일, 주소, 전화번호, 성별, 이미지)을 처리합니다.
+ *  성별은 N(선택 안 함) 상태에서만 M/F로 변경할 수 있으며, 한 번 설정하면 변경할 수 없습니다.
  *
  * History
  * 2026.07.13: Seung-Geon: 클래스 생성
  * 2026.07.16: Seung-Geon: 프로필 이미지 등록, 삭제 추가, @Transactional 추가, PII 로깅 제거
+ * 2026.08.13: Seung-Geon: 성별 변경 로직 추가 (N 상태에서만 변경 가능)
  * </pre>
  *
  * @author Seung-Geon
@@ -60,6 +63,16 @@ public class UserCommandServiceImpl implements UserCommandService{
         }
         if(request.image() != null) {
             userInfo.setUserImage(request.image());
+        }
+        if (request.gender() != null) {
+            GenderType requestedGender = GenderType.valueOf(request.gender());
+
+            // 성별은 N(선택 안 함) 상태에서만 M/F로 변경할 수 있으며, 한 번 설정하면 변경할 수 없다.
+            if (userInfo.getGender() != GenderType.N
+                    && userInfo.getGender() != requestedGender) {
+                throw new BusinessException(ResponseCode.GENDER_CHANGE_NOT_ALLOWED);
+            }
+            userInfo.setGender(requestedGender);
         }
 
         userInfoRepository.save(userInfo);

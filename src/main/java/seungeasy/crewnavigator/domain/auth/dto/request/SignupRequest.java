@@ -14,11 +14,13 @@ import jakarta.validation.constraints.Pattern;
  *  @param name     이름 (필수)
  *  @param email    이메일 (필수)
  *  @param phone    연락처 (필수, 10~11자리 숫자)
+ *  @param gender   성별(필수, M(남성), F(여성), N(선택 X) 중 하나)
  *  @param birthday 생년월일 (선택, yyyy-MM-dd 형식)
  *  @param address  주소 (선택)
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * 2026.08.13: Seung-Geon: 성별 속성 추가
  * </pre>
  *
  * @author Seung-Geon
@@ -43,6 +45,10 @@ public record SignupRequest(
         @NotBlank(message = "연락처는 필수 입력값입니다.")
         @Pattern(regexp = "^\\d{10,11}$", message = "올바른 전화번호 형식이 아닙니다.")
         String phone,
+
+        @NotBlank(message = "성별은 필수 입력값입니다.")
+        @Pattern(regexp = "^[MFN]$", message = "성별은 M, F, N 중 하나여야 합니다.")
+        String gender,
 
         String birthday,
         String address

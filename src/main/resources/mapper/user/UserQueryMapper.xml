@@ -6,7 +6,7 @@
 
     <!-- ========== getUserInfo ========== -->
     <select id="getUserInfo" resultType="UserInfoRow">
-        SELECT user_id, name, email, phone, status, is_locked, user_image, created_at, deleted_at
+        SELECT user_id, name, email, phone, gender, status, is_locked, user_image, created_at, deleted_at
         FROM `user`
         WHERE user_id = #{userId}
     </select>

@@ -48,6 +48,7 @@ public class UserQueryServiceImpl implements UserQueryService{
                 row.name(),
                 row.email(),
                 row.phone(),
+                row.gender(),
                 s3Service.generatePresignedUrl(row.userImage()),
                 row.createdAt()
         );

@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
  *  @param name      사용자 이름
  *  @param email     이메일 주소
  *  @param phone     연락처
+ *  @param gender    성별 (M/F/N)
  *  @param userImage 프로필 이미지 URL
  *
  * History
@@ -27,6 +28,7 @@ public record UserInfoResponse(
         String name,
         String email,
         String phone,
+        String gender,
         String userImage,
         LocalDateTime createdAt
 ) {}

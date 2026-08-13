@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import seungeasy.crewnavigator.domain.auth.type.UserStatus;
+import seungeasy.crewnavigator.domain.user.type.GenderType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,11 +17,13 @@ import java.time.LocalDateTime;
  *
  *  [주요 필드]
  *  - userId: 사용자 ID (PK)
+ *  - gender: 성별 (M/F/N, 기본값 N)
  *  - loginFailCount, isLocked: 계정 잠금 관련 필드 (로그인 실패 횟수 추적)
  *  - status: 계정 상태 (ACTIVE / INACTIVE / LEAVE)
  *
  * History
  * 2026.06.10: Seung-Geon: AI(oh-my-opencode)를 통한 클래스 생성
+ * 2026.08.13: Seung-Geon: 성별(gender) 속성 추가
  * </pre>
  *
  * @author Seung-Geon
@@ -42,6 +45,10 @@ public class UserInfo {
 
     @Column(name = "name", length = 50, nullable = false)
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", nullable = false)
+    private GenderType gender = GenderType.N;
 
     @Column(name = "birthday")
     private LocalDate birthday;
@@ -91,6 +98,10 @@ public class UserInfo {
         }
         if (this.status == null) {
             this.status = UserStatus.ACTIVE;
+        }
+
+        if (this.gender == null) {
+            this.gender = GenderType.N;
         }
     }
 

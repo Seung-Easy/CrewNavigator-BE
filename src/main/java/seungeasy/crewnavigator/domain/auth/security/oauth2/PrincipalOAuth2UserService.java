@@ -122,6 +122,7 @@ public class PrincipalOAuth2UserService extends DefaultOAuth2UserService {
         user.setName(name != null ? name : provider + "_member");
         user.setEmail(email != null ? email : loginId + "@" + provider + ".oauth2");
         user.setPhone("000-0000-0000"); // OAuth2 사용자 전화번호는 미제공시 placeholder
+        user.setGender("N"); // OAuth2 제공자는 성별 정보를 제공하지 않으므로 N(선택 안 함)으로 초기화
 
         userRepository.save(user);
 

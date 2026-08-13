@@ -135,6 +135,7 @@ public class AuthCommandServiceImpl implements AuthCommandService {
         User user = new User();
         user.setUserId(request.userId());
         user.setPassword(passwordEncoder.encode(request.password()));
+        user.setGender(request.gender());
         user.setName(request.name());
         user.setEmail(request.email());
         user.setPhone(request.phone());

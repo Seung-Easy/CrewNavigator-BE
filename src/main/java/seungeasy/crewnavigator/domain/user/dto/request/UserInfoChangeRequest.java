@@ -14,10 +14,12 @@ import java.time.LocalDate;
  *  @param birthday 변경할 생일 (nullable)
  *  @param address  변경할 주소 (nullable)
  *  @param phone    변경할 연락처 (nullable, 10~11자리 숫자)
+ *  @param gender   변경할 성별 (nullable, M(남성), F(여성), N(선택 안 함) 중 하나)
  *  @param image    변경할 프로필 이미지 URL (nullable)
  *
  * History
  * 2026.07.13: Seung-Geon: 클래스 생성
+ * 2026.08.13: Seung-Geon: 성별 속성 추가
  * </pre>
  *
  * @author Seung-Geon
@@ -30,5 +32,8 @@ public record UserInfoChangeRequest(
 
         @Pattern(regexp = "^\\d{10,11}$", message = "올바른 전화번호 형식이 아닙니다.")
         String phone,
+
+        @Pattern(regexp = "^[MFN]$", message = "성별은 M, F, N 중 하나여야 합니다.")
+        String gender,
         String image
 ) { }
