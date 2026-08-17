@@ -18,10 +18,11 @@ import java.time.LocalDateTime;
  * History
  * 2026.06.27: Chi-Yoon: DB 스키마 기반 엔티티 클래스 생성
  * 2026.06.27: Chi-Yoon: 빌더 패턴에 Category 매핑 누락 오류 수정
+ * 2026.07.28: Chi-Yoon: PostType(GENERAL, NOTICE) 구분 필드 추가 및 빌더 반영
  * </pre>
  *
  * @author Seung-Geon, Chi-Yoon
- * @version 1.1
+ * @version 1.2
  */
 @Entity
 @Table(name = "`post`")
@@ -41,6 +42,10 @@ public class Post {
     @Column(name = "content", nullable = false, columnDefinition = "LONGTEXT")
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "post_type", nullable = false)
+    private PostType postType;
+
     @Column(name = "view_count")
     private Integer viewCount = 0;
 
@@ -58,7 +63,7 @@ public class Post {
     private User writer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id", nullable = true) // 공지사항은 카테고리가 없을 수 있으므로 nullable 허용 고려
     private Category category;
 
     @PrePersist
@@ -70,6 +75,9 @@ public class Post {
         if (this.isDeleted == null) {
             this.isDeleted = "N";
         }
+        if (this.postType == null) {
+            this.postType = PostType.GENERAL;
+        }
     }
 
     @PreUpdate
@@ -77,13 +85,13 @@ public class Post {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 💡 수정된 빌더: Category를 파라미터로 받도록 변경!
     @Builder
-    public Post(String title, String content, User writer, Category category) {
+    public Post(String title, String content, User writer, Category category, PostType postType) {
         this.title = title;
         this.content = content;
         this.writer = writer;
         this.category = category;
+        this.postType = (postType != null) ? postType : PostType.GENERAL;
         this.viewCount = 0;
         this.isDeleted = "N";
     }

@@ -37,7 +37,7 @@ import seungeasy.crewnavigator.domain.post.service.PostQueryService;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/posts")
+@RequestMapping("/posts")
 public class PostController {
 
     private final PostCommandService postCommandService;
@@ -89,6 +89,7 @@ public class PostController {
             @Valid @RequestBody PostCreateRequest request,
             @AuthenticationPrincipal UserDetails loginUser
     ) {
+        // 어노테이션으로 해결할수 있을거 같다. 조심하자.
         if (loginUser == null) {
             log.error("Post creation failed: Unauthorized user context.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

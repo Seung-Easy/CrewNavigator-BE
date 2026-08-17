@@ -37,7 +37,7 @@ import seungeasy.crewnavigator.domain.comment.service.CommentQueryService;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/comments")
+@RequestMapping("/comments")
 public class CommentController {
 
     private final CommentCommandService commentCommandService;

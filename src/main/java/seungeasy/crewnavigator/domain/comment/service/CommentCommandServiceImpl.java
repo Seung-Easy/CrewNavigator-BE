@@ -24,10 +24,11 @@ import seungeasy.crewnavigator.domain.post.repository.PostRepository;
  * 2026.07.05: Chi-Yoon: Post/User 예외 검증 및 댓글 영속성 저장 로직 구현
  * 2026.07.05: Chi-Yoon: 댓글 수정(updateComment) 및 삭제(deleteComment) 권한 검증 로직 추가
  * 2026.07.05: Chi-Yoon: findById 누락 시 INTERNAL_SERVER_ERROR 대신 COMMENT_NOT_FOUND 명확한 예외 코드로 개선
+ * 2026.07.25: Chi-Yoon: 관리자 전용 댓글 강제 삭제(forceDeleteCommentByAdmin) 메서드 구현
  * </pre>
  *
  * @author Chi-Yoon
- * @version 1.2
+ * @version 1.3
  */
 @Slf4j
 @Service
@@ -105,5 +106,22 @@ public class CommentCommandServiceImpl implements CommentCommandService {
         // 3. 엔티티 내 is_deleted 상태를 'Y'로 변경하는 소프트 딜리트 로직 작동
         comment.delete();
         log.info("Comment soft-deleted successfully. Comment ID: {} by User: {}", commentId, userId);
+    }
+
+    /**
+     * [관리자 전용] 작성자 소유권 검증을 우회하여 댓글을 강제 삭제 처리합니다.
+     */
+    @Override
+    @Transactional
+    public void forceDeleteCommentByAdmin(Long commentId, String adminUsername) {
+        log.warn("ADMIN ACTION - Force deleting comment ID: {} requested by Admin: {}", commentId, adminUsername);
+
+        // 1. 댓글 존재 여부 조회
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ResponseCode.COMMENT_NOT_FOUND));
+
+        // 2. 작성자 검증(NOT_COMMENT_WRITER)을 스킵하고 바로 소프트 딜리트 수행
+        comment.delete();
+        log.info("Comment force-deleted by Admin successfully. Comment ID: {}, Admin: {}", commentId, adminUsername);
     }
 }
