@@ -30,10 +30,11 @@ import org.springframework.http.HttpStatus;
  * 2026.07.01: Chi-Yoon: EP002 NOT_POST_WRITER 게시글 수정/삭제 권한 부족 에러 코드 추가
  * 2026.07.05: Chi-Yoon: EM001 NOT_COMMENT_WRITER 댓글 수정/삭제 권한 부족 에러 코드 추가
  * 2026.07.05: Chi-Yoon: EM002 COMMENT_NOT_FOUND 존재하지 않는 댓글 에러 코드 추가 (💡 추가)
+ * 2026.08.29: Seung-Geon: EG013 ALREADY_INVITED 이미 초대한 회원 에러 코드 추가 (좌측/강퇴 회원 재초대 분기)
  * </pre>
  *
  * @author Seung-Geon, Chi-Yoon
- * @version 1.6
+ * @version 1.7
  */
 @Getter
 @RequiredArgsConstructor
@@ -409,6 +410,14 @@ public enum ResponseCode {
      * HTTP 상태: 400 Bad Request
      */
     INVALID_JOIN_STATUS(HttpStatus.BAD_REQUEST, "EG012", "현재 가입 상태에서는 처리할 수 없는 요청입니다."),
+
+    /**
+     * 이미 초대 중인 회원입니다.
+     *
+     * 상황: 같은 그룹에 이미 INVITED(초대 대기) 상태인 회원을 다시 초대하려고 할 때
+     * HTTP 상태: 409 Conflict
+     */
+    ALREADY_INVITED(HttpStatus.CONFLICT, "EG013", "이미 초대한 회원입니다."),
 
     // ------- EU: 사용자 (User) -------
     /**

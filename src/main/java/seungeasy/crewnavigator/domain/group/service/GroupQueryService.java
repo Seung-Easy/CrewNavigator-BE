@@ -1,6 +1,7 @@
 package seungeasy.crewnavigator.domain.group.service;
 
 import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
 
@@ -21,10 +22,11 @@ import java.util.List;
  *
  * History
  * 2026.08.02: Seung-Geon: 그룹 도메인 확장에 맞춰 전체 메서드 정의
+ * 2026.08.29: Seung-Geon: 목록 조회(검색/내 그룹/신청 그룹) 반환 타입을 GroupListResponse로 변경
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.1
  */
 public interface GroupQueryService {
 
@@ -42,7 +44,7 @@ public interface GroupQueryService {
      * @param userId 회원 아이디
      * @return 가입한 그룹 목록
      */
-    List<GroupResponse> getMyGroups(String userId);
+    List<GroupListResponse> getMyGroups(String userId);
 
     /**
      * 내가 가입 신청한(PENDING) 그룹 목록을 조회합니다.
@@ -50,7 +52,7 @@ public interface GroupQueryService {
      * @param userId 회원 아이디
      * @return 신청 대기 중인 그룹 목록
      */
-    List<GroupResponse> getMyAppliedGroups(String userId);
+    List<GroupListResponse> getMyAppliedGroups(String userId);
 
     /**
      * 그룹명 키워드로 그룹을 검색합니다.
@@ -60,7 +62,7 @@ public interface GroupQueryService {
      * @param keyword 검색 키워드
      * @return 검색된 그룹 목록
      */
-    List<GroupResponse> searchGroups(String keyword);
+    List<GroupListResponse> searchGroups(String keyword);
 
     /**
      * 그룹 가입 신청자(PENDING) 목록을 조회합니다. (그룹장 전용)

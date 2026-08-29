@@ -58,7 +58,8 @@
 
     <!-- ========== getApplicants (PENDING) ========== -->
     <select id="getApplicants" resultType="ApplicantRow">
-        SELECT gm.group_member_id, gm.user_id, u.name, gm.applied_at
+        SELECT gm.group_member_id, gm.user_id, u.name, u.birthday, u.gender,
+               gm.applied_at, gm.leave_reason, gm.left_at
         FROM group_member gm
         JOIN `user` u ON u.user_id = gm.user_id
         WHERE gm.group_id = #{groupId}

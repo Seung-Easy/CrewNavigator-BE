@@ -19,19 +19,26 @@ import java.time.LocalDateTime;
  *  - groupId: 그룹 번호 (FK)
  *  - userId: 회원 아이디 (FK)
  *  - memberRole: 그룹 내 권한 (LEADER, MEMBER)
- *  - joinStatus: 가입 상태 (PENDING, APPROVED, REJECTED, INVITED)
+ *  - joinStatus: 가입 상태 (PENDING, APPROVED, REJECTED, INVITED, LEFT)
  *  - appliedAt: 신청 일시
  *  - processedAt: 처리 일시 (승인/거절/수락 확정 시점)
+ *  - leaveReason: 나간 사유 (LEFT 상태일 때 기록, 재신청 승인 시 초기화)
+ *  - leftAt: 나간 일시 (LEFT 상태일 때 기록, 재신청 승인 시 초기화)
  *
  *  [비즈니스 규칙]
  *  - (groupId, userId) 조합은 UNIQUE — 같은 그룹에 중복 가입/신청 불가
+ *  - 나가기/추방 시 행을 삭제하지 않고 LEFT 상태로 전환 (soft-delete)
+ *    → 재신청(PENDING) 시점까지 이전 나간 사유를 보존하여 그룹장이 확인 가능
+ *  - 나간(LEFT) 회원은 재초대 시 INVITED 상태로 전환
  *
  * History
  * 2026.07.31: Seung-Geon: 스텁 클래스를 그룹 도메인 확장에 맞춰 구현
+ * 2026.08.13: Seung-Geon: 나가기/추방 soft-delete 전환 (LEFT 상태, leave_reason/left_at)
+ * 2026.08.29: Seung-Geon: LEFT 회원 재초대(invite) 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.2
  */
 @Entity
 @Table(
@@ -70,6 +77,12 @@ public class GroupMember {
 
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
+
+    @Column(name = "leave_reason", length = 255)
+    private String leaveReason;
+
+    @Column(name = "left_at")
+    private LocalDateTime leftAt;
 
     /**
      * 엔티티 최초 저장 전 실행됩니다. appliedAt과 기본값을 설정합니다.
@@ -121,10 +134,11 @@ public class GroupMember {
     }
 
     /**
-     * 거절(REJECTED)된 가입 신청을 다시 신청(PENDING) 상태로 전환합니다.
+     * 거절(REJECTED)되거나 퇴장(LEFT)한 가입 이력을 다시 신청(PENDING) 상태로 전환합니다.
      * <p>
-     * (groupId, userId) UNIQUE 제약 때문에 거절된 행을 재사용하여 재신청을 지원합니다.
+     * (groupId, userId) UNIQUE 제약 때문에 기존 행을 재사용하여 재신청을 지원합니다.
      * 처리 일시를 초기화하고 신청 일시를 현재 시각으로 갱신합니다.
+     * 퇴장(LEFT) 기록의 leaveReason/leftAt은 그룹장의 승인 전까지 보존됩니다. (승인 시 초기화)
      */
     public void reapply() {
         this.joinStatus = JoinStatus.PENDING;
@@ -133,11 +147,42 @@ public class GroupMember {
     }
 
     /**
+     * 초대 대기(INVITED) 상태로 전환합니다. (나간/강퇴된 멤버 재초대 시 사용)
+     * <p>
+     * LEFT(나감/강퇴) 상태 뿐 아니라 REJECTED(거절) 상태의 멤버를 다시 초대할 때 사용합니다.
+     * 처리 일시(processedAt)와 남은 사유(leaveReason/leftAt)를 초기화합니다.
+     */
+    public void invite() {
+        this.joinStatus = JoinStatus.INVITED;
+        this.processedAt = null;
+        this.leaveReason = null;
+        this.leftAt = null;
+    }
+
+    /**
      * 가입 신청을 승인 처리합니다. 상태를 APPROVED로 변경하고 처리 일시를 기록합니다.
+     * <p>
+     * 퇴장(LEFT) 이력이 있던 재신청이라면, 승인 시점에 나간 사유(leaveReason/leftAt)를 초기화합니다.
      */
     public void approve() {
         this.joinStatus = JoinStatus.APPROVED;
         this.processedAt = LocalDateTime.now();
+        this.leaveReason = null;
+        this.leftAt = null;
+    }
+
+    /**
+     * 그룹에서 퇴장(LEFT) 처리합니다. (나가기/추방 공통)
+     * <p>
+     * 행을 삭제하지 않고 상태를 LEFT로 전환하여 나간 사유와 일시를 기록합니다.
+     * 이후 재신청 시 PENDING으로 전환되어 이전 사유가 그룹장에게 노출됩니다.
+     *
+     * @param leaveReason 나간 사유 (없으면 null)
+     */
+    public void leave(String leaveReason) {
+        this.joinStatus = JoinStatus.LEFT;
+        this.leaveReason = leaveReason;
+        this.leftAt = LocalDateTime.now();
     }
 
     /**
@@ -154,6 +199,8 @@ public class GroupMember {
     public void acceptInvitation() {
         this.joinStatus = JoinStatus.APPROVED;
         this.processedAt = LocalDateTime.now();
+        this.leaveReason = null;
+        this.leftAt = null;
     }
 
     /**

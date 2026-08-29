@@ -132,11 +132,15 @@ public interface GroupCommandService {
 
     /**
      * 그룹에서 나갑니다. (그룹장은 나갈 수 없음 — 위임 후 가능)
+     * <p>
+     * 매핑 행을 삭제하지 않고 LEFT 상태로 전환하여 나간 사유와 일시를 기록합니다.
+     * 이후 재신청하면 이전 사유가 그룹장에게 노출되며, 승인 시 초기화됩니다.
      *
-     * @param userId  탈퇴할 회원 아이디
-     * @param groupId 대상 그룹 번호
+     * @param userId      탈퇴할 회원 아이디
+     * @param groupId     대상 그룹 번호
+     * @param leaveReason 나간 사유 (선택 — 없으면 null)
      */
-    void leaveGroup(String userId, Long groupId);
+    void leaveGroup(String userId, Long groupId, String leaveReason);
 
     /**
      * 그룹 초대에 응답합니다. (초대받은 본인만 가능)

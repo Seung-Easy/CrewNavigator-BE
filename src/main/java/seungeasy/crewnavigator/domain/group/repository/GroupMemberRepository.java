@@ -14,10 +14,11 @@ import java.util.Optional;
  *
  * History
  * 2026.08.02: Seung-Geon: 그룹 도메인 확장에 맞춰 생성
+ * 2026.08.13: Seung-Geon: LEFT(퇴장) 상태 추가 반영 (Javadoc 갱신)
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.1
  */
 public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> {
 

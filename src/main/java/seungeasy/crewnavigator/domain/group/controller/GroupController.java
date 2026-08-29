@@ -17,6 +17,7 @@ import seungeasy.crewnavigator.domain.group.dto.request.GroupInviteRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupMemberRemoveRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupUpdateRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
 import seungeasy.crewnavigator.domain.group.service.GroupCommandService;
@@ -57,10 +58,11 @@ import java.util.List;
  * 2024.07.23: Seung-Geon: 클래스 생성
  * 2026.07.31: Seung-Geon: 누락 API(입장 승인/거절, 그룹 정보 수정/보기, 멤버 권한 변경) 추가 및 @AuthenticationPrincipal null 방어 적용
  * 2026.08.02: Seung-Geon: GroupCommandService/GroupQueryService 구현체 연동 및 요청 DTO 바인딩 적용
+ * 2026.08.29: Seung-Geon: 목록 조회(검색/내 그룹/신청 그룹) 응답 타입을 GroupListResponse로 변경
  * </pre>
  *
  *  @author Seung-Geon
- * @version 1.5
+ * @version 1.6
  */
 
 
@@ -235,16 +237,16 @@ public class GroupController {
 
     @Operation(summary = "그룹 검색", description = "키워드로 그룹을 검색합니다.")
     @GetMapping("/search")
-    public ResponseEntity<CustomResponse<List<GroupResponse>>> searchGroups(
+    public ResponseEntity<CustomResponse<List<GroupListResponse>>> searchGroups(
             @RequestParam("keyword") String keyword
     ) {
-        List<GroupResponse> groups = groupQueryService.searchGroups(keyword);
+        List<GroupListResponse> groups = groupQueryService.searchGroups(keyword);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, groups));
     }
 
     @Operation(summary = "내가 가입한 그룹 보기", description = "현재 로그인한 사용자가 속한 그룹 목록을 봅니다.")
     @GetMapping("/my-groups")
-    public ResponseEntity<CustomResponse<List<GroupResponse>>> getMyGroups(
+    public ResponseEntity<CustomResponse<List<GroupListResponse>>> getMyGroups(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         if (userDetails == null) {
@@ -253,13 +255,13 @@ public class GroupController {
                     .body(CustomResponse.error(ResponseCode.UNAUTHORIZED_ACCESS));
         }
 
-        List<GroupResponse> myGroups = groupQueryService.getMyGroups(userDetails.getUsername());
+        List<GroupListResponse> myGroups = groupQueryService.getMyGroups(userDetails.getUsername());
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, myGroups));
     }
 
     @Operation(summary = "입장 신청한 그룹 보기", description = "현재 로그인한 사용자가 입장 신청한 그룹 목록을 봅니다.")
     @GetMapping("/my-applications")
-    public ResponseEntity<CustomResponse<List<GroupResponse>>> getMyAppliedGroups(
+    public ResponseEntity<CustomResponse<List<GroupListResponse>>> getMyAppliedGroups(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         if (userDetails == null) {
@@ -268,7 +270,7 @@ public class GroupController {
                     .body(CustomResponse.error(ResponseCode.UNAUTHORIZED_ACCESS));
         }
 
-        List<GroupResponse> appliedGroups = groupQueryService.getMyAppliedGroups(userDetails.getUsername());
+        List<GroupListResponse> appliedGroups = groupQueryService.getMyAppliedGroups(userDetails.getUsername());
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, appliedGroups));
     }
 
@@ -329,11 +331,12 @@ public class GroupController {
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, members));
     }
 
-    @Operation(summary = "그룹 나가기", description = "멤버가 스스로 그룹을 나갑니다.")
+    @Operation(summary = "그룹 나가기", description = "멤버가 스스로 그룹을 나갑니다. 사유는 선택이며 LEFT 상태로 기록됩니다.")
     @DeleteMapping("/{groupId}/members/leave")
     public ResponseEntity<CustomResponse<Void>> leaveGroup(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable("groupId") Long groupId
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(value = "leaveReason", required = false) String leaveReason
     ) {
         if (userDetails == null) {
             log.error("Leave group failed: Unauthorized user context.");
@@ -341,7 +344,7 @@ public class GroupController {
                     .body(CustomResponse.error(ResponseCode.UNAUTHORIZED_ACCESS));
         }
 
-        groupCommandService.leaveGroup(userDetails.getUsername(), groupId);
+        groupCommandService.leaveGroup(userDetails.getUsername(), groupId, leaveReason);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.NO_CONTENT));
     }
 

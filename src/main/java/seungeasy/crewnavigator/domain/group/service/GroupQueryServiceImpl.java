@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import seungeasy.crewnavigator.common.exception.BusinessException;
 import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
 import seungeasy.crewnavigator.domain.group.dto.row.GroupRow;
@@ -25,10 +26,11 @@ import java.util.List;
  * History
  * 2026.08.02: Seung-Geon: 스텁 서비스를 그룹 도메인 확장에 맞춰 전체 구현
  * 2026.08.02: Seung-Geon: JPA → MyBatis 마이그레이션 (CQRS, GroupQueryMapper 적용)
+ * 2026.08.29: Seung-Geon: 목록 조회 응답을 GroupListResponse로 분리
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.1
+ * @version 1.2
  */
 @Slf4j
 @Service
@@ -52,9 +54,9 @@ public class GroupQueryServiceImpl implements GroupQueryService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<GroupResponse> getMyGroups(String userId) {
+    public List<GroupListResponse> getMyGroups(String userId) {
         return groupQueryMapper.getMyGroups(userId).stream()
-                .map(this::toResponse)
+                .map(this::toListResponse)
                 .toList();
     }
 
@@ -63,9 +65,9 @@ public class GroupQueryServiceImpl implements GroupQueryService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<GroupResponse> getMyAppliedGroups(String userId) {
+    public List<GroupListResponse> getMyAppliedGroups(String userId) {
         return groupQueryMapper.getMyAppliedGroups(userId).stream()
-                .map(this::toResponse)
+                .map(this::toListResponse)
                 .toList();
     }
 
@@ -74,10 +76,10 @@ public class GroupQueryServiceImpl implements GroupQueryService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<GroupResponse> searchGroups(String keyword) {
+    public List<GroupListResponse> searchGroups(String keyword) {
         // is_private="Y"(비공개) 그룹은 SQL에서 제외 (is_private = 'N')
         return groupQueryMapper.searchGroups(keyword).stream()
-                .map(this::toResponse)
+                .map(this::toListResponse)
                 .toList();
     }
 
@@ -140,6 +142,13 @@ public class GroupQueryServiceImpl implements GroupQueryService {
         if (!groupQueryMapper.isApprovedMember(group.getGroupId(), userId)) {
             throw new BusinessException(ResponseCode.NOT_GROUP_MEMBER);
         }
+    }
+
+    /**
+     * GroupRow를 GroupListResponse DTO로 변환합니다. (목록 조회용 - 생성/수정일시 제외)
+     */
+    private GroupListResponse toListResponse(GroupRow row) {
+        return GroupListResponse.from(row, splitTags(row.getTags()));
     }
 
     /**

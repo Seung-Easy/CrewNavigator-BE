@@ -35,15 +35,20 @@ import java.util.Optional;
  *  - 그룹 가입 신청은 모두 그룹장 승인 대기(PENDING) 상태 (즉시 가입 없음)
  *  - is_private는 "그룹 검색 노출 여부"를 나타내는 설정으로, 가입 승인 방식과 무관함
  *  - 거절(REJECTED)된 신청은 재신청 시 PENDING으로 재전환 (UK_group_user 제약 때문)
+ *  - 나가기/추방 시 매핑 행을 삭제하지 않고 LEFT 상태로 전환 (soft-delete)
+ *    → 재신청 시 LEFT → PENDING으로 재전환되며, 이전 나간 사유는 승인 시 초기화됨
  *  - 그룹장은 나가기/강등 불가 — 위임(다른 멤버를 LEADER로 승격)으로만 변경 가능
  *  - 정원(max_members)은 APPROVED 멤버 수 기준으로 체크
+ *  - 나간(LEFT)/거절(REJECTED)된 회원은 재초대 시 INVITED로 재전환
  *
  * History
  * 2026.08.02: Seung-Geon: 스텁 서비스를 그룹 도메인 확장에 맞춰 전체 구현
+ * 2026.08.13: Seung-Geon: 나가기/추방 soft-delete 전환 (LEFT 상태, leave_reason/left_at 기록)
+ * 2026.08.29: Seung-Geon: LEFT/REJECTED 회원 재초대 처리
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.2
  */
 @Slf4j
 @Service
@@ -104,14 +109,17 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             if (invitedUserId.equals(userId)) {
                 throw new BusinessException(ResponseCode.CANNOT_INVITE_SELF);
             }
-            if (groupMemberRepository.existsByGroupIdAndUserId(groupId, invitedUserId)) {
-                throw new BusinessException(ResponseCode.ALREADY_GROUP_MEMBER);
-            }
             // 초대 대상 회원 존재 확인
             userRepository.findById(invitedUserId)
                     .orElseThrow(() -> new BusinessException(ResponseCode.USER_NOT_FOUND));
 
-            groupMemberRepository.save(GroupMember.createInvited(groupId, invitedUserId));
+            // 기존 멤버 매핑 존재 여부에 따라 신규 초대 또는 재초대 처리
+            Optional<GroupMember> existing = groupMemberRepository.findByGroupIdAndUserId(groupId, invitedUserId);
+            if (existing.isPresent()) {
+                reInvite(groupId, existing.get());
+            } else {
+                groupMemberRepository.save(GroupMember.createInvited(groupId, invitedUserId));
+            }
         }
         log.info("Members invited successfully. Group ID: {}, Invited by: {}", groupId, userId);
     }
@@ -130,7 +138,8 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             throw new BusinessException(ResponseCode.GROUP_LEADER_CANNOT_DEMOTE);
         }
 
-        groupMemberRepository.delete(target);
+        // 추방도 soft-delete: LEFT 상태로 전환하여 사유와 일시 기록 (재신청 시 이력 확인 가능)
+        target.leave(request.leaveReason());
         log.info("Member removed successfully. Group ID: {}, Removed User: {}", groupId, request.userId());
     }
 
@@ -254,6 +263,13 @@ public class GroupCommandServiceImpl implements GroupCommandService {
                     log.info("Group application reapplied. Group ID: {}, User: {}", groupId, userId);
                     return;
                 }
+                case LEFT -> {
+                    // 퇴장(LEFT)했던 멤버의 재신청: PENDING으로 재전환
+                    // 이전 나간 사유(leaveReason/leftAt)는 승인 시까지 보존되어 그룹장이 확인 가능
+                    member.reapply();
+                    log.info("Group application reapplied after leave. Group ID: {}, User: {}", groupId, userId);
+                    return;
+                }
             }
         }
 
@@ -283,7 +299,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
 
     @Override
     @Transactional
-    public void leaveGroup(String userId, Long groupId) {
+    public void leaveGroup(String userId, Long groupId, String leaveReason) {
         GroupMember member = groupMemberRepository.findByGroupIdAndUserId(groupId, userId)
                 .orElseThrow(() -> new BusinessException(ResponseCode.NOT_GROUP_MEMBER));
 
@@ -294,9 +310,10 @@ public class GroupCommandServiceImpl implements GroupCommandService {
             throw new BusinessException(ResponseCode.NOT_GROUP_MEMBER);
         }
 
-        // 나가기 = 매핑 행 삭제 (재가입 시 UK_group_user 충돌 없음)
-        groupMemberRepository.delete(member);
-        log.info("Member left group. Group ID: {}, User: {}", groupId, userId);
+        // 나가기 = soft-delete: LEFT 상태로 전환하여 사유와 일시 기록
+        // (재신청 시 UK_group_user 제약 충돌 없이 LEFT → PENDING으로 재전환)
+        member.leave(leaveReason);
+        log.info("Member left group. Group ID: {}, User: {}, Reason: {}", groupId, userId, leaveReason);
     }
 
     @Override
@@ -389,5 +406,26 @@ public class GroupCommandServiceImpl implements GroupCommandService {
                     tag.setTagName(tagName);
                     return tagRepository.save(tag);
                 });
+    }
+
+    /**
+     * 이미 그룹-회원 매핑이 존재하는 경우의 초대 처리입니다.
+     * <p>
+     * - APPROVED: 이미 가입한 멤버 → ALREADY_GROUP_MEMBER
+     * - PENDING:   가입 신청 대기 중 → ALREADY_GROUP_APPLIED
+     * - INVITED:   이미 초대 중 → ALREADY_INVITED
+     * - LEFT:      나갔던/강퇴된 멤버 재초대 → invite()로 INVITED 재전환
+     * - REJECTED:  거절된 신청 재초대 → invite()로 INVITED 재전환
+     */
+    private void reInvite(Long groupId, GroupMember member) {
+        switch (member.getJoinStatus()) {
+            case APPROVED -> throw new BusinessException(ResponseCode.ALREADY_GROUP_MEMBER);
+            case PENDING -> throw new BusinessException(ResponseCode.ALREADY_GROUP_APPLIED);
+            case INVITED -> throw new BusinessException(ResponseCode.ALREADY_INVITED);
+            case LEFT, REJECTED -> {
+                member.invite();
+                log.info("Member re-invited. Group ID: {}, User: {}", groupId, member.getUserId());
+            }
+        }
     }
 }
