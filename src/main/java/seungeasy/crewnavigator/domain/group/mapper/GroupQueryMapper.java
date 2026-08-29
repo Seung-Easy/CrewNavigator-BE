@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import seungeasy.crewnavigator.domain.group.dto.row.ApplicantRow;
 import seungeasy.crewnavigator.domain.group.dto.row.GroupRow;
+import seungeasy.crewnavigator.domain.group.dto.row.GroupWarningRow;
 import seungeasy.crewnavigator.domain.group.dto.row.MemberRow;
 
 import java.util.List;
@@ -16,10 +17,11 @@ import java.util.List;
  *
  * History
  * 2026.08.02: Seung-Geon: 그룹 조회를 JPA → MyBatis 마이그레이션 (CQRS)
+ * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.0
+ * @version 1.1
  */
 @Mapper
 public interface GroupQueryMapper {
@@ -80,4 +82,12 @@ public interface GroupQueryMapper {
      * @return 가입 멤버이면 true
      */
     boolean isApprovedMember(@Param("groupId") Long groupId, @Param("userId") String userId);
+
+    /**
+     * 특정 그룹의 경고 목록을 조회합니다. (관리자 이름 JOIN 포함)
+     *
+     * @param groupId 그룹 번호
+     * @return 그룹 경고 Row 목록
+     */
+    List<GroupWarningRow> getGroupWarnings(@Param("groupId") Long groupId);
 }

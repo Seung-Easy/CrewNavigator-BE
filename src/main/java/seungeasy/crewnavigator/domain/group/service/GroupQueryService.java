@@ -3,6 +3,7 @@ package seungeasy.crewnavigator.domain.group.service;
 import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupWarningResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
 
 import java.util.List;
@@ -23,10 +24,11 @@ import java.util.List;
  * History
  * 2026.08.02: Seung-Geon: 그룹 도메인 확장에 맞춰 전체 메서드 정의
  * 2026.08.29: Seung-Geon: 목록 조회(검색/내 그룹/신청 그룹) 반환 타입을 GroupListResponse로 변경
+ * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.1
+ * @version 1.2
  */
 public interface GroupQueryService {
 
@@ -81,4 +83,13 @@ public interface GroupQueryService {
      * @return 그룹 멤버 목록
      */
     List<MemberResponse> getGroupMembers(String userId, Long groupId);
+
+    /**
+     * 그룹 내 경고 목록을 조회합니다. (그룹 멤버 전용)
+     *
+     * @param userId  요청자 회원 아이디 (멤버 검증용)
+     * @param groupId 그룹 번호
+     * @return 그룹 경고 목록
+     */
+    List<GroupWarningResponse> getGroupWarnings(String userId, Long groupId);
 }

@@ -4,6 +4,7 @@ import seungeasy.crewnavigator.domain.group.dto.request.GroupCreateRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupInviteRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupMemberRemoveRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupUpdateRequestDto;
+import seungeasy.crewnavigator.domain.group.dto.request.GroupWarningRequestDto;
 import seungeasy.crewnavigator.domain.group.type.GroupMemberRole;
 
 /**
@@ -23,10 +24,11 @@ import seungeasy.crewnavigator.domain.group.type.GroupMemberRole;
  * History
  * 2026.07.24: Seung-Geon: 인터페이스 생성
  * 2026.08.02: Seung-Geon: 그룹 도메인 확장에 맞춰 전체 메서드 정의
+ * 2026.08.29: Seung-Geon: 그룹 경고 부여 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.2
+ * @version 1.3
  */
 public interface GroupCommandService {
 
@@ -150,4 +152,13 @@ public interface GroupCommandService {
      * @param accept        true면 수락, false면 거절
      */
     void respondToInvitation(String userId, Long groupMemberId, boolean accept);
+
+    /**
+     * 관리자가 특정 그룹에 경고를 부여합니다.
+     *
+     * @param adminId 관리자 아이디
+     * @param groupId 대상 그룹 번호
+     * @param request 경고 등록 요청 정보
+     */
+    void warnGroup(String adminId, Long groupId, GroupWarningRequestDto request);
 }

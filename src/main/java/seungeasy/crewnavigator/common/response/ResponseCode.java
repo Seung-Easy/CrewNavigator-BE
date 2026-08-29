@@ -31,10 +31,11 @@ import org.springframework.http.HttpStatus;
  * 2026.07.05: Chi-Yoon: EM001 NOT_COMMENT_WRITER 댓글 수정/삭제 권한 부족 에러 코드 추가
  * 2026.07.05: Chi-Yoon: EM002 COMMENT_NOT_FOUND 존재하지 않는 댓글 에러 코드 추가 (💡 추가)
  * 2026.08.29: Seung-Geon: EG013 ALREADY_INVITED 이미 초대한 회원 에러 코드 추가 (좌측/강퇴 회원 재초대 분기)
+ * 2026.08.29: Seung-Geon: 그룹 경고 기능 구현에 따른 버전 업데이트
  * </pre>
  *
  * @author Seung-Geon, Chi-Yoon
- * @version 1.7
+ * @version 1.8
  */
 @Getter
 @RequiredArgsConstructor

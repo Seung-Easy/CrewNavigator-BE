@@ -19,6 +19,7 @@ import seungeasy.crewnavigator.domain.group.dto.request.GroupUpdateRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupWarningResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
 import seungeasy.crewnavigator.domain.group.service.GroupCommandService;
 import seungeasy.crewnavigator.domain.group.service.GroupQueryService;
@@ -59,10 +60,11 @@ import java.util.List;
  * 2026.07.31: Seung-Geon: 누락 API(입장 승인/거절, 그룹 정보 수정/보기, 멤버 권한 변경) 추가 및 @AuthenticationPrincipal null 방어 적용
  * 2026.08.02: Seung-Geon: GroupCommandService/GroupQueryService 구현체 연동 및 요청 DTO 바인딩 적용
  * 2026.08.29: Seung-Geon: 목록 조회(검색/내 그룹/신청 그룹) 응답 타입을 GroupListResponse로 변경
+ * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 API 추가
  * </pre>
  *
  *  @author Seung-Geon
- * @version 1.6
+ * @version 1.7
  */
 
 
@@ -363,5 +365,21 @@ public class GroupController {
 
         groupCommandService.respondToInvitation(userDetails.getUsername(), invitationId, accept);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK));
+    }
+
+    @Operation(summary = "그룹 경고 목록 조회", description = "그룹 내 경고 목록을 조회합니다. (그룹 멤버 전용)")
+    @GetMapping("/{groupId}/warnings")
+    public ResponseEntity<CustomResponse<List<GroupWarningResponse>>> getGroupWarnings(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable("groupId") Long groupId
+    ) {
+        if (userDetails == null) {
+            log.error("Get group warnings failed: Unauthorized user context.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(CustomResponse.error(ResponseCode.UNAUTHORIZED_ACCESS));
+        }
+
+        List<GroupWarningResponse> warnings = groupQueryService.getGroupWarnings(userDetails.getUsername(), groupId);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, warnings));
     }
 }

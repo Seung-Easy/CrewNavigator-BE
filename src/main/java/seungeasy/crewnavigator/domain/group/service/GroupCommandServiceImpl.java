@@ -11,14 +11,17 @@ import seungeasy.crewnavigator.domain.group.dto.request.GroupCreateRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupInviteRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupMemberRemoveRequestDto;
 import seungeasy.crewnavigator.domain.group.dto.request.GroupUpdateRequestDto;
+import seungeasy.crewnavigator.domain.group.dto.request.GroupWarningRequestDto;
 import seungeasy.crewnavigator.domain.group.entity.CrewGroup;
 import seungeasy.crewnavigator.domain.group.entity.GroupMember;
 import seungeasy.crewnavigator.domain.group.entity.GroupTag;
+import seungeasy.crewnavigator.domain.group.entity.GroupWarning;
 import seungeasy.crewnavigator.domain.group.entity.Tag;
 import seungeasy.crewnavigator.domain.group.entity.id.GroupTagId;
 import seungeasy.crewnavigator.domain.group.repository.GroupMemberRepository;
 import seungeasy.crewnavigator.domain.group.repository.GroupRepository;
 import seungeasy.crewnavigator.domain.group.repository.GroupTagRepository;
+import seungeasy.crewnavigator.domain.group.repository.GroupWarningRepository;
 import seungeasy.crewnavigator.domain.group.repository.TagRepository;
 import seungeasy.crewnavigator.domain.group.type.GroupMemberRole;
 import seungeasy.crewnavigator.domain.group.type.JoinStatus;
@@ -45,10 +48,11 @@ import java.util.Optional;
  * 2026.08.02: Seung-Geon: 스텁 서비스를 그룹 도메인 확장에 맞춰 전체 구현
  * 2026.08.13: Seung-Geon: 나가기/추방 soft-delete 전환 (LEFT 상태, leave_reason/left_at 기록)
  * 2026.08.29: Seung-Geon: LEFT/REJECTED 회원 재초대 처리
+ * 2026.08.29: Seung-Geon: 그룹 경고 부여 기능 구현
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.2
+ * @version 1.3
  */
 @Slf4j
 @Service
@@ -60,6 +64,7 @@ public class GroupCommandServiceImpl implements GroupCommandService {
     private final TagRepository tagRepository;
     private final GroupTagRepository groupTagRepository;
     private final UserRepository userRepository;
+    private final GroupWarningRepository groupWarningRepository;
 
     @Override
     @Transactional
@@ -189,9 +194,10 @@ public class GroupCommandServiceImpl implements GroupCommandService {
         validateLeader(group, userId);
 
         group.delete();
-        // 해산된 그룹의 멤버/태그 매핑 정리
+        // 해산된 그룹의 멤버/태그/경고 매핑 정리
         groupMemberRepository.deleteByGroupId(groupId);
         groupTagRepository.deleteByGroupTagId_GroupId(groupId);
+        groupWarningRepository.deleteByGroupId(groupId);
 
         log.info("Group soft-deleted successfully. Group ID: {}, Deleted by: {}", groupId, userId);
     }
@@ -427,5 +433,16 @@ public class GroupCommandServiceImpl implements GroupCommandService {
                 log.info("Member re-invited. Group ID: {}, User: {}", groupId, member.getUserId());
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void warnGroup(String adminId, Long groupId, GroupWarningRequestDto request) {
+        CrewGroup group = getActiveGroup(groupId);
+        groupWarningRepository.save(GroupWarning.create(groupId, adminId, request.warningReason()));
+        log.info("Group warned successfully. Group ID: {}, Warned by: {}", groupId, adminId);
     }
 }

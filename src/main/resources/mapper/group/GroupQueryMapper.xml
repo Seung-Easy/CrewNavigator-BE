@@ -89,4 +89,13 @@
         )
     </select>
 
+    <!-- ========== getGroupWarnings ========== -->
+    <select id="getGroupWarnings" resultType="GroupWarningRow">
+        SELECT gw.group_warning_id, gw.group_id, gw.admin_id, gw.warning_reason, gw.created_at, u.name AS admin_name
+        FROM group_warning gw
+        JOIN `user` u ON u.user_id = gw.admin_id
+        WHERE gw.group_id = #{groupId}
+        ORDER BY gw.created_at DESC
+    </select>
+
 </mapper>

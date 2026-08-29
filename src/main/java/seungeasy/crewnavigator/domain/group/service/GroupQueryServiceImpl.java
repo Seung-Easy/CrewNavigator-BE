@@ -9,6 +9,7 @@ import seungeasy.crewnavigator.common.response.ResponseCode;
 import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupWarningResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
 import seungeasy.crewnavigator.domain.group.dto.row.GroupRow;
 import seungeasy.crewnavigator.domain.group.mapper.GroupQueryMapper;
@@ -27,10 +28,11 @@ import java.util.List;
  * 2026.08.02: Seung-Geon: 스텁 서비스를 그룹 도메인 확장에 맞춰 전체 구현
  * 2026.08.02: Seung-Geon: JPA → MyBatis 마이그레이션 (CQRS, GroupQueryMapper 적용)
  * 2026.08.29: Seung-Geon: 목록 조회 응답을 GroupListResponse로 분리
+ * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 기능 구현
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.2
+ * @version 1.3
  */
 @Slf4j
 @Service
@@ -108,6 +110,20 @@ public class GroupQueryServiceImpl implements GroupQueryService {
 
         return groupQueryMapper.getApprovedMembers(groupId).stream()
                 .map(MemberResponse::from)
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<GroupWarningResponse> getGroupWarnings(String userId, Long groupId) {
+        GroupRow group = getActiveGroup(groupId);
+        validateMember(group, userId);
+
+        return groupQueryMapper.getGroupWarnings(groupId).stream()
+                .map(GroupWarningResponse::from)
                 .toList();
     }
 
