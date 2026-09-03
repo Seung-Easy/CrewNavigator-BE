@@ -2,6 +2,8 @@ package seungeasy.crewnavigator.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import seungeasy.crewnavigator.common.response.CustomResponse;
@@ -46,6 +48,47 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(responseCode.getHttpStatus())
                 .body(CustomResponse.error(responseCode));
+    }
+
+    /**
+     * Spring Security 권한 위반 예외 처리
+     *
+     * - {@code @PreAuthorize} 등으로 보호된 리소스에 권한이 없는 사용자가 접근할 때 발생합니다.
+     * - 예: 일반 회원이 어드민 전용 API(AdminGroupController)를 호출하는 경우
+     * - 항상 403 Forbidden을 반환합니다.
+     *
+     * @param e 발생한 AccessDeniedException
+     * @return 403 에러 응답을 담은 ResponseEntity
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    protected ResponseEntity<CustomResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("AccessDeniedException: {}", e.getMessage());
+        ResponseCode responseCode = ResponseCode.FORBIDDEN;
+        return ResponseEntity
+                .status(responseCode.getHttpStatus())
+                .body(CustomResponse.error(responseCode));
+    }
+
+    /**
+     * 요청 본문 검증 실패 예외 처리
+     *
+     * - {@code @Valid @RequestBody} DTO의 필드 검증(@NotBlank 등)이 실패할 때 발생합니다.
+     * - 예: GroupWarningRequestDto.warningReason이 빈 값인 경우
+     * - 항상 400 Bad Request(EC001)를 반환하며, 첫 번째 실패 필드의 메시지를 포함합니다.
+     *
+     * @param e 발생한 MethodArgumentNotValidException
+     * @return 400 에러 응답을 담은 ResponseEntity
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<CustomResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+        log.warn("MethodArgumentNotValidException: {}", e.getMessage());
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(fieldError -> fieldError.getDefaultMessage())
+                .orElse(ResponseCode.INVALID_INPUT_VALUE.getMessage());
+        return ResponseEntity
+                .status(ResponseCode.INVALID_INPUT_VALUE.getHttpStatus())
+                .body(CustomResponse.error(ResponseCode.INVALID_INPUT_VALUE));
     }
 
     /**

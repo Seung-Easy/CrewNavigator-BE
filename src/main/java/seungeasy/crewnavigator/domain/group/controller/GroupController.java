@@ -20,7 +20,9 @@ import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupWarningResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.InvitationResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.MyGroupStatusResponse;
 import seungeasy.crewnavigator.domain.group.service.GroupCommandService;
 import seungeasy.crewnavigator.domain.group.service.GroupQueryService;
 import seungeasy.crewnavigator.domain.group.type.GroupMemberRole;
@@ -54,6 +56,8 @@ import java.util.List;
  *      - 그룹 검색
  *      - 입장 신청한 그룹들 보기
  *      - 내가 들어있는 그룹보기
+ *      - 내가 초대받은 그룹 보기
+ *      - 나의 그룹 상태 보기 (강퇴/나가기 사유 포함)
  *
  * History
  * 2024.07.23: Seung-Geon: 클래스 생성
@@ -61,10 +65,11 @@ import java.util.List;
  * 2026.08.02: Seung-Geon: GroupCommandService/GroupQueryService 구현체 연동 및 요청 DTO 바인딩 적용
  * 2026.08.29: Seung-Geon: 목록 조회(검색/내 그룹/신청 그룹) 응답 타입을 GroupListResponse로 변경
  * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 API 추가
+ * 2026.09.02: Seung-Geon: 초대받은 그룹 목록 / 나의 그룹 상태 조회 API 추가
  * </pre>
  *
  *  @author Seung-Geon
- * @version 1.7
+ * @version 1.8
  */
 
 
@@ -381,5 +386,36 @@ public class GroupController {
 
         List<GroupWarningResponse> warnings = groupQueryService.getGroupWarnings(userDetails.getUsername(), groupId);
         return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, warnings));
+    }
+
+    @Operation(summary = "내가 초대받은 그룹 보기", description = "현재 로그인한 사용자가 초대받은(INVITED) 그룹 목록을 봅니다.")
+    @GetMapping("/my-invitations")
+    public ResponseEntity<CustomResponse<List<InvitationResponse>>> getMyInvitations(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            log.error("Get my invitations failed: Unauthorized user context.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(CustomResponse.error(ResponseCode.UNAUTHORIZED_ACCESS));
+        }
+
+        List<InvitationResponse> invitations = groupQueryService.getMyInvitations(userDetails.getUsername());
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, invitations));
+    }
+
+    @Operation(summary = "나의 그룹 상태 조회", description = "특정 그룹에서의 나의 가입 상태를 조회합니다. 강퇴/나가기(LEFT) 시 사유와 일시를 확인할 수 있습니다.")
+    @GetMapping("/{groupId}/my-status")
+    public ResponseEntity<CustomResponse<MyGroupStatusResponse>> getMyGroupStatus(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable("groupId") Long groupId
+    ) {
+        if (userDetails == null) {
+            log.error("Get my group status failed: Unauthorized user context.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(CustomResponse.error(ResponseCode.UNAUTHORIZED_ACCESS));
+        }
+
+        MyGroupStatusResponse status = groupQueryService.getMyGroupStatus(userDetails.getUsername(), groupId);
+        return ResponseEntity.ok(CustomResponse.success(ResponseCode.OK, status));
     }
 }

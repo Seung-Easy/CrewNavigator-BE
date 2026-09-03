@@ -98,4 +98,41 @@
         ORDER BY gw.created_at DESC
     </select>
 
+    <!-- ========== getMyInvitations (INVITED) ========== -->
+    <select id="getMyInvitations" resultType="InvitationRow">
+        SELECT gm.group_member_id AS invitation_id,
+               <include refid="groupColumns"/>,
+               u.name AS leader_name,
+               gm.applied_at AS invited_at
+        FROM group_member gm
+        JOIN crew_group g ON g.group_id = gm.group_id
+        JOIN `user` u ON u.user_id = g.leader_id
+        WHERE gm.user_id = #{userId}
+          AND gm.join_status = 'INVITED'
+          AND g.is_deleted = 'N'
+        ORDER BY gm.applied_at DESC
+    </select>
+
+    <!-- ========== getMyGroupStatus ========== -->
+    <select id="getMyGroupStatus" resultType="MyGroupStatusRow">
+        SELECT gm.group_member_id, gm.group_id, gm.join_status, gm.member_role,
+               gm.applied_at, gm.leave_reason, gm.left_at
+        FROM group_member gm
+        WHERE gm.group_id = #{groupId}
+          AND gm.user_id = #{userId}
+    </select>
+
+    <!-- ========== getWarningSummaries (어드민 경고 누적 집계) ========== -->
+    <select id="getWarningSummaries" resultType="GroupWarningSummaryRow">
+        SELECT gw.group_id, g.group_name, g.leader_id,
+               COUNT(*) AS warning_count,
+               MAX(gw.created_at) AS latest_warning_at,
+               SUBSTRING_INDEX(GROUP_CONCAT(gw.warning_reason ORDER BY gw.created_at DESC SEPARATOR '\n'), '\n', 1) AS latest_reason
+        FROM group_warning gw
+        JOIN crew_group g ON g.group_id = gw.group_id
+        WHERE g.is_deleted = 'N'
+        GROUP BY gw.group_id, g.group_name, g.leader_id
+        ORDER BY warning_count DESC, latest_warning_at DESC
+    </select>
+
 </mapper>

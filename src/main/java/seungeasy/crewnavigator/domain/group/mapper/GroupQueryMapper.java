@@ -5,7 +5,10 @@ import org.apache.ibatis.annotations.Param;
 import seungeasy.crewnavigator.domain.group.dto.row.ApplicantRow;
 import seungeasy.crewnavigator.domain.group.dto.row.GroupRow;
 import seungeasy.crewnavigator.domain.group.dto.row.GroupWarningRow;
+import seungeasy.crewnavigator.domain.group.dto.row.GroupWarningSummaryRow;
+import seungeasy.crewnavigator.domain.group.dto.row.InvitationRow;
 import seungeasy.crewnavigator.domain.group.dto.row.MemberRow;
+import seungeasy.crewnavigator.domain.group.dto.row.MyGroupStatusRow;
 
 import java.util.List;
 
@@ -18,10 +21,11 @@ import java.util.List;
  * History
  * 2026.08.02: Seung-Geon: 그룹 조회를 JPA → MyBatis 마이그레이션 (CQRS)
  * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 메서드 추가
+ * 2026.09.02: Seung-Geon: 초대 목록/나의 상태/어드민 경고 집계 조회 메서드 추가
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.1
+ * @version 1.2
  */
 @Mapper
 public interface GroupQueryMapper {
@@ -90,4 +94,29 @@ public interface GroupQueryMapper {
      * @return 그룹 경고 Row 목록
      */
     List<GroupWarningRow> getGroupWarnings(@Param("groupId") Long groupId);
+
+    /**
+     * 회원이 초대받은(INVITED) 그룹 목록을 조회합니다. (그룹장 이름 JOIN 포함)
+     *
+     * @param userId 회원 아이디
+     * @return 초대받은 그룹 Row 목록
+     */
+    List<InvitationRow> getMyInvitations(@Param("userId") String userId);
+
+    /**
+     * 회원의 특정 그룹 가입 상태를 조회합니다. (없으면 null)
+     * 강퇴/나가기(LEFT) 시 사유(leaveReason)와 일시(leftAt)를 확인하기 위한 용도입니다.
+     *
+     * @param groupId 그룹 번호
+     * @param userId  회원 아이디
+     * @return 나의 그룹 상태 Row (없으면 null)
+     */
+    MyGroupStatusRow getMyGroupStatus(@Param("groupId") Long groupId, @Param("userId") String userId);
+
+    /**
+     * 경고가 있는 그룹들의 누적 경고 현황을 집계합니다. (어드민 전용)
+     *
+     * @return 그룹별 경고 누적 Row 목록 (경고 많은 순)
+     */
+    List<GroupWarningSummaryRow> getWarningSummaries();
 }

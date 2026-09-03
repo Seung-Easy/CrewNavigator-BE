@@ -32,10 +32,11 @@ import org.springframework.http.HttpStatus;
  * 2026.07.05: Chi-Yoon: EM002 COMMENT_NOT_FOUND 존재하지 않는 댓글 에러 코드 추가 (💡 추가)
  * 2026.08.29: Seung-Geon: EG013 ALREADY_INVITED 이미 초대한 회원 에러 코드 추가 (좌측/강퇴 회원 재초대 분기)
  * 2026.08.29: Seung-Geon: 그룹 경고 기능 구현에 따른 버전 업데이트
+ * 2026.09.02: Seung-Geon: EC003 FORBIDDEN 공통 접근 권한 에러 코드 추가 (AccessDeniedException 처리)
  * </pre>
  *
  * @author Seung-Geon, Chi-Yoon
- * @version 1.8
+ * @version 1.9
  */
 @Getter
 @RequiredArgsConstructor
@@ -96,6 +97,14 @@ public enum ResponseCode {
      * HTTP 상태: 500 Internal Server Error
      */
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "EC002", "서버 내부 오류가 발생했습니다."),
+
+    /**
+     * 접근 권한이 없습니다.
+     *
+     * 상황: 권한이 부족한 사용자가 보호된 리소스에 접근할 때 (Spring Security AccessDeniedException 포함)
+     * HTTP 상태: 403 Forbidden
+     */
+    FORBIDDEN(HttpStatus.FORBIDDEN, "EC003", "접근 권한이 없습니다."),
 
     // ------- EA: 인증/계정 (Auth) -------
     /**

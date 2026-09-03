@@ -10,8 +10,12 @@ import seungeasy.crewnavigator.domain.group.dto.response.ApplicantResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupListResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.GroupWarningResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.GroupWarningSummaryResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.InvitationResponse;
 import seungeasy.crewnavigator.domain.group.dto.response.MemberResponse;
+import seungeasy.crewnavigator.domain.group.dto.response.MyGroupStatusResponse;
 import seungeasy.crewnavigator.domain.group.dto.row.GroupRow;
+import seungeasy.crewnavigator.domain.group.dto.row.MyGroupStatusRow;
 import seungeasy.crewnavigator.domain.group.mapper.GroupQueryMapper;
 
 import java.util.Arrays;
@@ -29,10 +33,11 @@ import java.util.List;
  * 2026.08.02: Seung-Geon: JPA → MyBatis 마이그레이션 (CQRS, GroupQueryMapper 적용)
  * 2026.08.29: Seung-Geon: 목록 조회 응답을 GroupListResponse로 분리
  * 2026.08.29: Seung-Geon: 그룹 경고 목록 조회 기능 구현
+ * 2026.09.02: Seung-Geon: 초대 목록/나의 상태/어드민 경고 집계 조회 기능 구현
  * </pre>
  *
  * @author Seung-Geon
- * @version 1.3
+ * @version 1.4
  */
 @Slf4j
 @Service
@@ -121,6 +126,58 @@ public class GroupQueryServiceImpl implements GroupQueryService {
     public List<GroupWarningResponse> getGroupWarnings(String userId, Long groupId) {
         GroupRow group = getActiveGroup(groupId);
         validateMember(group, userId);
+
+        return groupQueryMapper.getGroupWarnings(groupId).stream()
+                .map(GroupWarningResponse::from)
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<InvitationResponse> getMyInvitations(String userId) {
+        return groupQueryMapper.getMyInvitations(userId).stream()
+                .map(row -> InvitationResponse.from(row, splitTags(row.getTags())))
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public MyGroupStatusResponse getMyGroupStatus(String userId, Long groupId) {
+        // 그룹이 활성 상태인지 먼저 확인 (소프트 삭제된 그룹이면 조회 불가)
+        getActiveGroup(groupId);
+
+        MyGroupStatusRow row = groupQueryMapper.getMyGroupStatus(groupId, userId);
+        if (row == null) {
+            throw new BusinessException(ResponseCode.GROUP_MEMBER_NOT_FOUND);
+        }
+        return MyGroupStatusResponse.from(row);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<GroupWarningSummaryResponse> getWarningSummaries() {
+        return groupQueryMapper.getWarningSummaries().stream()
+                .map(GroupWarningSummaryResponse::from)
+                .toList();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<GroupWarningResponse> getAdminGroupWarnings(Long groupId) {
+        // 그룹이 활성 상태인지 먼저 확인 (어드민이지만 존재하지 않는 그룹에 대한 조회 방지)
+        getActiveGroup(groupId);
 
         return groupQueryMapper.getGroupWarnings(groupId).stream()
                 .map(GroupWarningResponse::from)
